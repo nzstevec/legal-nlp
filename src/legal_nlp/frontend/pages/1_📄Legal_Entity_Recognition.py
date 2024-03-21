@@ -3,6 +3,11 @@ from clients.nlp_api_client import APIClient
 from config import Config
 import colorsys
 from streamlit_extras.app_logo import add_logo
+import streamlit_shadcn_ui as ui
+import pandas as pd
+
+# Define a limited color palette
+COLOR_PALETTE = ["#97E5D7",  "#B5E8D8", "#D2EBD8", "#E7EEDB", "#FCF1DD", "#FEE3CB", "#FFD4B8"]
 
 def saturate_lighten_color(hex_color, percentage):
     # Remove the "#" symbol and parse the hex color
@@ -39,6 +44,33 @@ def highlight_ner(text, ner_tags, label_colors):
         current_index = end_index
     highlighted_text += text[current_index:]
     return highlighted_text
+    
+def render_highlight():
+    # Call the API client to process the text
+    response = api_client.process_text(text_input)
+    ner_tags = response["ner_tags"]
+    
+    # Assign colors from the color palette to each label
+    unique_tags = set([sublist[1] for sublist in ner_tags])
+    label_colors = {}
+    for i, label in enumerate(unique_tags):
+        label_colors[label] = COLOR_PALETTE[i % len(COLOR_PALETTE)]  # Use modulus to cycle through the color palette
+    
+    # Highlight NER tags using dynamic labels and colors
+    highlighted_text = highlight_ner(text_input, ner_tags, label_colors)
+    st.markdown(highlighted_text, unsafe_allow_html=True)
+
+def split_list_into_df(my_list, num_columns):
+    # Calculate the number of rows needed for the DataFrame
+    num_rows = -(-len(my_list) // num_columns)
+    # Pad the list if necessary to make sure it's evenly divisible
+    my_list += [None] * (num_rows * num_columns - len(my_list))
+    # Reshape the list into a 2D array
+    data = [my_list[i:i+num_columns] for i in range(0, len(my_list), num_columns)]
+    
+    df = pd.DataFrame(data, columns=[f'Column{i+1}' for i in range(num_columns)])
+    df.style.hide() 
+    return df
 
 st.set_page_config(layout="wide")
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
@@ -58,24 +90,21 @@ SUMMARY
 2. The HyperTech Group, a purported blockchain technology conglomerate founded by Lee and others (collectively, the “Founders”) launched HyperFund in June 2020. At the outset, HyperFund claimed to be a project dedicated to creating a so-called “decentralized finance (DeFi) ecosystem” for crypto asset market participants. Over time, the project’s stated goals evolved and utilized various names in an effort to capitalize on the buzz words and zeitgeist of the day, including rebranding itself as “HyperVerse” and, later, as “HyperNation,” a version of the project which featured an individual in a mask discussing creating a decentralized government to escape the societal bonds of inequality and injustice through blockchain technology. HyperFund, including its subsequent rebranded iterations, is now defunct. 
 3. From 06/2020 through 05/022, HyperFund offered so-called “membership” packages promising exorbitant passive returns, supposedly derived in part from HyperFund’s crypto asset mining operations. For example, HyperFund promised returns of 0.5% to 1% per day, with the prospect of tripling ones’ initial investment in 600 days. HyperFund also implemented a pyramid scheme-like referral system to reward existing members for recruiting new investors."""
 
-text_input = st.text_area("Enter text here:", value=default_text, height=250)
+col1, col2 = st.columns((0.6, 0.3), gap="medium")
+with col1:
+    text_input = st.text_area("Enter text here:", value=default_text, height=250)
+with col2:
+    # Show table of entity labels
+    ner_labels = split_list_into_df(api_client.get_ner_labels(), 3)
+    ner_table_html = ner_labels.to_html(index=False, header=False)
+    ner_table_html = ner_table_html.replace("<table", "<table style=\"font-size:.875rem; line-height:1.25rem; border-color:#e5e7eb; border-style:solid;\"")
+    print(ner_table_html)
+    st.write("<h5 style=\"margin-top:1rem\">Labels</h5>", unsafe_allow_html=True)
+    st.write(ner_table_html, unsafe_allow_html=True)
+    # ui.table(data=ner_labels)
+
 if st.button("Process"):
     try:
-        # Define a limited color palette
-        color_palette = ["#97E5D7",  "#B5E8D8", "#D2EBD8", "#E7EEDB", "#FCF1DD", "#FEE3CB", "#FFD4B8"]
-        
-        # Call the API client to process the text
-        response = api_client.process_text(text_input)
-        ner_tags = response["ner_tags"]
-        
-        # Assign colors from the color palette to each label
-        unique_tags = set([sublist[1] for sublist in ner_tags])
-        label_colors = {}
-        for i, label in enumerate(unique_tags):
-            label_colors[label] = color_palette[i % len(color_palette)]  # Use modulus to cycle through the color palette
-        
-        # Highlight NER tags using dynamic labels and colors
-        highlighted_text = highlight_ner(text_input, ner_tags, label_colors)
-        st.markdown(highlighted_text, unsafe_allow_html=True)
+        render_highlight()
     except Exception as e:
         st.error(f"Error processing text: {e}")
