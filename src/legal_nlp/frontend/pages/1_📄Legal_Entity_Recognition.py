@@ -41,7 +41,7 @@ def highlight_ner(text, ner_tags, label_colors):
     return highlighted_text
 
 st.set_page_config(layout="wide")
-add_logo("frontend\\static\\images\\smartR-AI-logo-RGB_250x90.png", height=65)
+add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 st.title("Legal Entity Recognition")
 
 # Initialize the API client with the backend URL

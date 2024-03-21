@@ -6,7 +6,7 @@ st.set_page_config(
     page_icon="👋",
 )
 
-add_logo("frontend\\static\\images\\smartR-AI-logo-RGB_250x90.png", height=65)
+add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
 st.write("# Welcome to SCOTi! 👋")
 
