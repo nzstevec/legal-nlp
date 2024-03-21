@@ -21,3 +21,5 @@ open en_legal_ner_trf/meta.json and:
  cd into src/legal_nlp
 
  python run_both.py
+
+ ![NER Example](https://gitlab.com/SmartR_AI/gpt/demo-projects/legal-nlp/-/blob/main/images/NER_Example.png)
