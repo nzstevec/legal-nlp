@@ -2,7 +2,7 @@ import spacy
 
 class TextProcessor:
     def __init__(self):
-        self.nlp = spacy.load("models\\en_legal_ner_trf")
+        self.nlp = spacy.load("models/en_legal_ner_trf")
 
     def process_text(self, text: str):
         doc = self.nlp(text)
