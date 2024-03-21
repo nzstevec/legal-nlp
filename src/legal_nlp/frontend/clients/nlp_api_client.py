@@ -1,0 +1,20 @@
+import requests
+
+class APIClient:
+    def __init__(self, base_url):
+        self.base_url = base_url
+
+    def process_text(self, text):
+        endpoint = f"{self.base_url}/process_text"
+        data = {"text": str(text)}
+        response = requests.post(endpoint, json=data)
+        response.raise_for_status()
+        
+        return response.json()
+
+    def get_ner_labels(self):
+        endpoint = f"{self.base_url}/ner_labels"
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        
+        return response.json()
