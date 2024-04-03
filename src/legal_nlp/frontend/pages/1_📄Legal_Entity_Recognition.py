@@ -98,7 +98,6 @@ with col2:
     ner_labels = split_list_into_df(api_client.get_ner_labels(), 3)
     ner_table_html = ner_labels.to_html(index=False, header=False)
     ner_table_html = ner_table_html.replace("<table", "<table style=\"font-size:.875rem; line-height:1.25rem; border-color:#e5e7eb; border-style:solid;\"")
-    print(ner_table_html)
     st.write("<h5 style=\"margin-top:1rem\">Labels</h5>", unsafe_allow_html=True)
     st.write(ner_table_html, unsafe_allow_html=True)
     # ui.table(data=ner_labels)
