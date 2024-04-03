@@ -1,8 +1,10 @@
 import streamlit as st
 from clients.runpod_client import RunpodClient
+from streamlit_extras.app_logo import add_logo
 from config import Config
 
 st.set_page_config(layout="wide")
+add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 st.title("Chat with SCOTi")
 
 # Set OpenAI API key from Streamlit secrets
