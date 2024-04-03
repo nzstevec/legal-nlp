@@ -90,7 +90,7 @@ SUMMARY
 2. The HyperTech Group, a purported blockchain technology conglomerate founded by Lee and others (collectively, the “Founders”) launched HyperFund in June 2020. At the outset, HyperFund claimed to be a project dedicated to creating a so-called “decentralized finance (DeFi) ecosystem” for crypto asset market participants. Over time, the project’s stated goals evolved and utilized various names in an effort to capitalize on the buzz words and zeitgeist of the day, including rebranding itself as “HyperVerse” and, later, as “HyperNation,” a version of the project which featured an individual in a mask discussing creating a decentralized government to escape the societal bonds of inequality and injustice through blockchain technology. HyperFund, including its subsequent rebranded iterations, is now defunct. 
 3. From 06/2020 through 05/022, HyperFund offered so-called “membership” packages promising exorbitant passive returns, supposedly derived in part from HyperFund’s crypto asset mining operations. For example, HyperFund promised returns of 0.5% to 1% per day, with the prospect of tripling ones’ initial investment in 600 days. HyperFund also implemented a pyramid scheme-like referral system to reward existing members for recruiting new investors."""
 
-col1, col2 = st.columns((0.6, 0.3), gap="medium")
+col1, col2 = st.columns((0.7, 0.3), gap="medium")
 with col1:
     text_input = st.text_area("Enter text here:", value=default_text, height=250)
 with col2:
