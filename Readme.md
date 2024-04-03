@@ -18,8 +18,10 @@ open en_legal_ner_trf/meta.json and:
  - find+replace single quotes with double quotes
  - on line 152 after "partial_f1": 90.34146341463416 remove the comma
 
- cd into src/legal_nlp
+cd into src/legal_nlp
 
- python run_both.py
+insert your api keys into src\legal_nlp\frontend\config.py
 
- ![NER Example](https://gitlab.com/SmartR_AI/gpt/demo-projects/legal-nlp/-/raw/main/images/NER_Example.png)
+python run_both.py
+
+![NER Example](https://gitlab.com/SmartR_AI/gpt/demo-projects/legal-nlp/-/raw/main/images/NER_Example.png)
