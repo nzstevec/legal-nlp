@@ -22,6 +22,6 @@ cd into src/legal_nlp
 
 insert your api keys into src\legal_nlp\frontend\config.py
 
-python run_both.py
+python start_both.py
 
 ![NER Example](https://gitlab.com/SmartR_AI/gpt/demo-projects/legal-nlp/-/raw/main/images/NER_Example.png)
