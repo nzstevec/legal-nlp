@@ -30,7 +30,7 @@ if "current_gif" not in st.session_state:
 
 def extract_relation_json_from_text(text):
     # Define a regular expression pattern to match each dictionary
-    pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+},\s*"additional_info":\s*{[^}]+}\s*}'
+    pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+}\s*}'
 
     # Find all matches of the pattern in the text
     matches = re.findall(pattern, text, re.DOTALL)
@@ -77,7 +77,7 @@ def get_relation_graph():
     
     # If the current graph is the same length as the previous graph assume finished
     if previous_graph != "" and len(relation_json) <= len(json.loads(previous_graph)):
-        st.session_state['prev_relation_graph'] = None
+        stop_graph_generation()
     else:
         #  Else cache current partial graph and continue next call
         existing_relations = extract_relation_json_from_text(hidden_response)
@@ -86,6 +86,9 @@ def get_relation_graph():
 
     return visible_response, hidden_response
 
+def stop_graph_generation():
+    st.session_state['prev_relation_graph'] = None
+    
 def reset_conversation():
     st.session_state['messages_visible'] = [
         {
@@ -139,26 +142,6 @@ def get_prompt_fuzzy_matched(
 
     return input_prompt
 
-
-def get_prompt_fuzzy_matched(
-    input_prompt: str,
-    choices: List[str] = SCOTI_FUNCTIONS.keys(),
-    fuzzy_thresh: int = 65,
-) -> str:
-    """
-    If a match exceeds the fuzzy threshold, it will be used. It will take the first match which is above the threshold.
-
-    If no match is found, it will return the input_prompt to be used in the async gpt call.
-    """
-
-    for choice in choices:
-        similarity_score = fuzz.ratio(input_prompt, choice)
-        if similarity_score > fuzzy_thresh:  # fuzzy_thresh is an int in [0,100]
-            return choice
-
-    return input_prompt
-
-
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
 with st.sidebar:
@@ -197,11 +180,11 @@ for i, message in enumerate(st.session_state.messages_visible):
         
         # If last message and we have not finished rendering the graph then continue rendering, reloading the chat as we get new updates to the graph
         if i+1 == len(st.session_state.messages_visible) and 'prev_relation_graph' in st.session_state and st.session_state['prev_relation_graph'] is not None:
-            pop_last_message()
-            
+            st.button("Pause", on_click=stop_graph_generation)            
             with st.spinner():
                 bot_visible_response, bot_hidden_response = get_relation_graph()
                 
+            pop_last_message()
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
             st.rerun()
@@ -215,7 +198,7 @@ if prompt := st.chat_input("Enter message here..."):
         st.markdown(prompt)
 
     # NOTE: Need to investigate what fuzzy threshold works best for the questions you'll be asking
-    prompt = get_prompt_fuzzy_matched(prompt)
+    prompt = get_prompt_fuzzy_matched(prompt.strip())
 
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
@@ -223,7 +206,7 @@ if prompt := st.chat_input("Enter message here..."):
         # Handle function call manually
         if prompt in SCOTI_FUNCTIONS:
             with st.spinner():
-                bot_visible_response, bot_hidden_response = SCOTI_FUNCTIONS[prompt.strip()]()
+                bot_visible_response, bot_hidden_response = SCOTI_FUNCTIONS[prompt]()
             st.write(bot_visible_response, unsafe_allow_html=True)
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
