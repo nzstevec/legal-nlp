@@ -1,4 +1,5 @@
 import streamlit as st
+import graphviz
 
 from clients.runpod_client import RunpodClient
 from streamlit_extras.app_logo import add_logo
@@ -18,6 +19,31 @@ SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2_cropped.gif"
 
 
 def get_relation_graph():
+    # Define the DOT representation of the graph
+    dot_graph = """
+    digraph G {
+        "Carmichael" -> "OneSteel" [label="Contracted_With"];
+        "OneSteel" -> "Whyalla" [label="Arranged_For_Shipment"];
+        "Whyalla" -> "Mackay" [label="Shipped_To"];
+        "BBC" -> "OneSteel" [label="Prepared_Stowage_Plan"];
+        "OneSteel" -> "OneSteel's subcontractor" [label="Loaded_Onto_Ship"];
+    }
+    """
+
+    # Render the graph from the DOT representation
+    graph = graphviz.Source(dot_graph)
+
+    # Convert the graph to SVG format
+    graph_svg = graph.pipe(format='svg').decode('utf-8')
+
+    # Render the SVG image with a responsive layout
+    html = f"""
+    <div style="max-width: 100%; overflow-x: auto;">
+        {graph_svg}
+    </div>
+    """
+    st.components.v1.html(html, height=420)
+    
     return "Here is the relations for..."
 
 def reset_conversation():
