@@ -1,21 +1,20 @@
 import graphviz
 from clients.runpod_client import RunpodClient
 import json
+import re
 
 class RelationProcessor:
     def __init__(self):
         self.gpt_client = RunpodClient()
 
-    def extract_json_from_text(self, raw_string):
-        start_index = raw_string.find("[")
-        end_index = raw_string.rfind("]") + 1
+    def extract_json_from_text(self, text):
+        # Define a regular expression pattern to match each dictionary
+        pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+},\s*"additional_info":\s*{[^}]+}\s*}'
 
-        if start_index != -1 and end_index != -1:
-            json_string = raw_string[start_index:end_index]
-            json_data = json.loads(json_string)
-            return json_data
-        else:
-            return None
+        # Find all matches of the pattern in the text
+        matches = re.findall(pattern, text, re.DOTALL)
+        print(f'[{",".join(matches)}]')
+        return json.loads(f'[{",".join(matches)}]')
 
     def strip_angle_brackets(self, entity):
         parts = entity.split('>')
@@ -38,12 +37,11 @@ class RelationProcessor:
         return dot
 
     def get_relation_graph(self, text: str):
-             
         generate_relations_json_prompt = """You are an expert entity relation extractor for legal documents. 
-Given the following piece of text with entities marked using angled bracket tags please extract any relevant relations between the entities in the following text in a json format. 
-The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
+You will be given a document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date.
+Please extract ALL the relations between ALL the entities in the text in a json format. The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
 
-Here is a sample for the output json formatting:
+Here is a sample for the output json schema:
 ```json
 [
   {
@@ -55,17 +53,19 @@ Here is a sample for the output json formatting:
   }
 ]
 ```
-
+ONLY RESPOND IN JSON!
 Here is the text from which to extract the entity relations:\n"""
         
         generate_relations_json_prompt += text
 
         messages = [{"role": "user", "content": generate_relations_json_prompt}]
         gpt_response = self.gpt_client.get_gpt_response(messages, generation_args={"max_tokens": 4096})
-
+        
+        print(gpt_response)
+        
         # Assume that scoti will return the entities wrapped in square brackets
         relations_json = self.extract_json_from_text(gpt_response)
-        
+        print(relations_json)
         dot_graph = self.json_to_dot(relations_json)
 
         # Render the graph from the DOT representation

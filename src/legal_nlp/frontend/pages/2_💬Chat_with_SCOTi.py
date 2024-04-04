@@ -52,6 +52,8 @@ def get_relation_graph():
     # End the message with the model presenting the generated graph to the user
     hidden_response += visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
 
+    print(hidden_response)
+
     # Render the SVG image with a responsive layout
     html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
     
@@ -130,6 +132,19 @@ def get_prompt_fuzzy_matched(
 
 
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
+
+with st.sidebar:
+    description = st.markdown(
+        f"""
+Chat with SCOTi directly and ask any questions about your legal documents!
+"""
+    )
+    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
+
+    with scoti_gif_sizing:
+        st.image(st.session_state["current_gif"])
+
+
 st.title("Chat with SCOTi")
 
 # Initialize the API client with the backend URL
@@ -185,16 +200,4 @@ if prompt := st.chat_input("Enter message here..."):
 
             bot_response = st.write_stream(response_generator)
             add_message_to_both_states("assistant", bot_response)
-    st.button("Clear Conversation", on_click=reset_conversation)
-
-
-with st.sidebar:
-    description = st.markdown(
-        f"""
-Chat with SCOTi directly and ask any questions about your legal documents!
-"""
-    )
-    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
-
-    with scoti_gif_sizing:
-        st.image(st.session_state["current_gif"])
+st.button("Clear Conversation", on_click=reset_conversation)
