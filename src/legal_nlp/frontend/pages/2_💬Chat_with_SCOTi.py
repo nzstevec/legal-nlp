@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 SCOTI_AVATAR = "frontend/static/images/chatbot_avatars/scoti.png"
-USER_AVATAR = "🧑‍💻"
+USER_AVATAR = "frontend/static/images/chatbot_avatars/user.png"
 
 SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2_cropped.gif"
 
