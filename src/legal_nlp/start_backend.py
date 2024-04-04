@@ -5,11 +5,11 @@ def main():
     # Launch FastAPI backend
     backend_process = subprocess.Popen([
         "uvicorn",
-        "backend.launch:app",
+        "launch:app",
         f"--host={BackendConfig.HOST}",
         f"--port={BackendConfig.PORT}",
         "--reload"
-    ])
+    ], cwd="./backend")
     
     try:
         # Wait for processes to complete

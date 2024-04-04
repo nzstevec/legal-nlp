@@ -1,8 +1,9 @@
 import spacy
+from config import Config
 
 class TextProcessor:
     def __init__(self):
-        self.nlp = spacy.load("models/en_legal_ner_trf")
+        self.nlp = spacy.load(Config.NER_MODEL)
 
     def process_text(self, text: str):
         doc = self.nlp(text)

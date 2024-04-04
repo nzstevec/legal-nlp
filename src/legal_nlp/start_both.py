@@ -5,11 +5,11 @@ def main():
     # Launch FastAPI backend
     backend_process = subprocess.Popen([
         "uvicorn",
-        "backend.launch:app",
+        "launch:app",
         f"--host={BackendConfig.HOST}",
         f"--port={BackendConfig.PORT}",
         "--reload"
-    ])
+    ], cwd="./backend")
 
     # Launch Streamlit frontend
     frontend_process = subprocess.Popen(["streamlit", "run", "frontend/🏠Home.py"])
