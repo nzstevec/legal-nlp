@@ -12,7 +12,7 @@ class RelationProcessor:
 
     def extract_json_from_text(self, text):
         # Define a regular expression pattern to match each dictionary
-        pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+},\s*"additional_info":\s*{[^}]+}\s*}'
+        pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+}\s*}'
 
         # Find all matches of the pattern in the text
         matches = re.findall(pattern, text, re.DOTALL)
@@ -48,7 +48,7 @@ class RelationProcessor:
     def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048):
         generate_relations_json_prompt = """You are an expert entity relation extractor for legal documents. 
 You will be given a document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date.
-Please extract ALL the relations between ALL the tagged entities in the text in a json format. The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
+Please extract ALL the relations between ALL the tagged entities in the text in a json format. The json should include the abbreviated relation, and the relevant entity pair.
 
 Here is a sample for the output json schema:
 ```json
@@ -56,10 +56,7 @@ Here is a sample for the output json schema:
   {
   "relation": "Contracted_With",
   "entity1": {"entity": "<PETITIONER>Carmichael</PETITIONER>", "type": "Person"},
-  "entity2": {"entity": "<ORG>OneSteel</ORG>", "type": "Organization"},
-  "additional_info": {
-    "description": "The appellant ('Carmichael', the shipper) contracted with the second respondent (OneSteel) for the manufacture and supply of head-hardened steel rails."
-  }
+  "entity2": {"entity": "<ORG>OneSteel</ORG>", "type": "Organization"}
 ]
 ```
 ONLY RESPOND IN JSON!
@@ -84,6 +81,8 @@ Here is the text from which to extract the entity relations:\n"""
         # Assume that scoti will return the entities wrapped in square brackets
         relations_json = self.extract_json_from_text(existing_relations_prompt + gpt_response)
         dot_graph = self.json_to_dot(relations_json)
+        
+        dot_graph = dot_graph.replace('}', 'rankdir="LR";}')
 
         # Render the graph from the DOT representation
         graph = graphviz.Source(dot_graph)
