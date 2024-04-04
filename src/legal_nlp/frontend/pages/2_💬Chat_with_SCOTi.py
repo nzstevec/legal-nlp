@@ -26,11 +26,23 @@ if "current_gif" not in st.session_state:
     # Scoti wagging tail is default
     st.session_state["current_gif"] = SCOTI_HAPPY_GIF
 
-
-def get_relation_graph(sleep: bool = True):
-    if sleep:
-        time.sleep(5)
-
+def get_relation_graph():
+    if 'ner_text_tagged' not in st.session_state:
+        response = "Please return to the entity extraction page and upload a document first."
+        return response, response
+    
+    visible_response = "Here is the relation graph for your document."
+    
+    hidden_response = "<hidden_message>Here is a document with entities extracted using NLP. " \
+        "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. " \
+        "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. " \
+        "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n" \
+        + st.session_state['ner_text_tagged'] \
+        + "\n</hidden_message>\n" + visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
+    
+    # Placeholder sleep
+    # time.sleep(5)
+    
     # Define the DOT representation of the graph
     dot_graph = """
     digraph G {
@@ -49,29 +61,61 @@ def get_relation_graph(sleep: bool = True):
     graph_svg = graph.pipe(format="svg").decode("utf-8")
 
     # Render the SVG image with a responsive layout
-    html = f"""
-    <div style="max-width: 100%; overflow-x: auto;">
-        {graph_svg}
-    </div>
-    """
-
-    return "Here is the relations for...", html
-
+    html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
+    
+    visible_response += html    
+    return visible_response, hidden_response
 
 def reset_conversation():
-    st.session_state.messages = [
+    st.session_state['messages_visible'] = [
         {
             "role": "assistant",
             "content": "Let's start a new conversation. What would you like to ask me?",
         }
     ]
-
+    
+    st.session_state['messages_hidden'] = [
+        {
+            "role": "assistant",
+            "content": "Let's start a new conversation. What would you like to ask me?",
+        }
+    ]
+    
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
 
 
-# NOTE: Right now, I've set this up so that the funciton returns two args. First is markdown
-# i.e. what scoti will say, the second is the custom component to be rendered.
-SCOTI_FUNCTIONS = {"Show me the relation graph for this document": get_relation_graph}
+def add_message_to_both_states(role, message):
+    add_visible_message_to_state(role, message)
+    add_hidden_message_to_state(role, message)
+ 
+def add_visible_message_to_state(role, message):
+    st.session_state.messages_visible.append({"role": role, "content": message})
+    
+def add_hidden_message_to_state(role, message):
+    st.session_state.messages_hidden.append({"role": role, "content": message})
+
+
+SCOTI_FUNCTIONS = {
+    "Show me the relation graph for this document": get_relation_graph
+}
+
+def get_prompt_fuzzy_matched(
+    input_prompt: str,
+    choices: List[str] = SCOTI_FUNCTIONS.keys(),
+    fuzzy_thresh: int = 65,
+) -> str:
+    """
+    If a match exceeds the fuzzy threshold, it will be used. It will take the first match which is above the threshold.
+
+    If no match is found, it will return the input_prompt to be used in the async gpt call.
+    """
+
+    for choice in choices:
+        similarity_score = fuzz.ratio(input_prompt, choice)
+        if similarity_score > fuzzy_thresh:  # fuzzy_thresh is an int in [0,100]
+            return choice
+
+    return input_prompt
 
 
 def get_prompt_fuzzy_matched(
@@ -99,24 +143,11 @@ st.title("Chat with SCOTi")
 client = RunpodClient()
 
 # Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "assistant",
-            "content": "Hey! I'm SCOTi. Ask me a question using the box below to get started.",
-        },
-        {
-            "role": "user",
-            "content": "Show me the relation graph for this document.",
-        },
-        {  # NOTE: Something fishy here it is not properly being saved
-            "role": "assistant_custom_component",
-            "content": get_relation_graph(sleep=False)[1],
-        },
-    ]
+if "messages_visible" not in st.session_state or "messages_hidden" not in st.session_state:
+    reset_conversation()
 
 # Display chat messages from history on app rerun
-for message in st.session_state.messages:
+for message in st.session_state.messages_visible:
     role = message["role"]
 
     if role == "user":
@@ -124,17 +155,13 @@ for message in st.session_state.messages:
     else:
         avatar = SCOTI_AVATAR
 
-    if role != "assistant_custom_component":
-        with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
-    else:
-        st.components.v1.html(message["content"], height=420)
-
+    with st.chat_message(message["role"], avatar=avatar):
+        st.markdown(message["content"], unsafe_allow_html=True)
 
 # Accept user input
 if prompt := st.chat_input("Enter message here..."):
     # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    add_message_to_both_states("user", prompt)
     # Display user message in chat message container
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt)
@@ -145,27 +172,25 @@ if prompt := st.chat_input("Enter message here..."):
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
         st.session_state["current_gif"] = SCOTI_LOADING_GIF
-
+        # Handle function call manually
         if prompt in SCOTI_FUNCTIONS:
             with st.spinner():
-                bot_response, custom_component = SCOTI_FUNCTIONS[prompt.strip()]()
-            st.write(bot_response)
-
-            # NOTE: To ensure the component comes after scoti saying "here is the relation..."
-            if custom_component:
-                st.components.v1.html(custom_component, height=420)
+                bot_visible_response, bot_hidden_response = SCOTI_FUNCTIONS[prompt.strip()]()
+                
+            st.write(bot_visible_response, unsafe_allow_html=True)
+            add_visible_message_to_state("assistant", bot_visible_response)
+            add_hidden_message_to_state("assistant", bot_hidden_response)
         else:
             response_generator = client.queue_async_job(
                 messages=[
                     {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
+                    for m in st.session_state.messages_hidden
                 ],
                 stream=Config.STREAM_CHAT,
             )
 
             bot_response = st.write_stream(response_generator)
-
-    st.session_state.messages.append({"role": "assistant", "content": bot_response})
+            add_message_to_both_states("assistant", bot_response)
     st.button("Clear Conversation", on_click=reset_conversation)
 
 
