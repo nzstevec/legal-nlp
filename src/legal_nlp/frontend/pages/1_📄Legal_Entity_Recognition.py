@@ -140,6 +140,18 @@ st.set_page_config(
 
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
+with st.sidebar:
+    description = st.markdown(
+        f"""
+SCOTi can extract legal entities from text with ease. Simply enter your text, and let SCOTi extract key information for you!
+"""
+    )
+    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
+
+    with scoti_gif_sizing:
+        st.image(SCOTI_GIF_PATH)
+
+
 st.title("Legal Entity Recognition")
 
 # Initialize the API client with the backend URL
@@ -178,14 +190,3 @@ with col1_2:
 
 # Render text with ner label highlights
 st.markdown(st.session_state['ner_highlight'], unsafe_allow_html=True)
-
-with st.sidebar:
-    description = st.markdown(
-        f"""
-SCOTi can extract legal entities from text with ease. Simply enter your text, and let SCOTi extract key information for you!
-"""
-    )
-    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
-
-    with scoti_gif_sizing:
-        st.image(SCOTI_GIF_PATH)

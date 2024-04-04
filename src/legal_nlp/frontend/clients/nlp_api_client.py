@@ -20,8 +20,20 @@ class APIClient:
         return response.json()
     
     def get_relation_graph(self, text):
-        endpoint = f"{self.base_url}/entity_relations"
+        endpoint = f"{self.base_url}/get_entity_relations"
         data = {"text": str(text)}
+        response = requests.post(endpoint, json=data)
+        response.raise_for_status()
+        
+        response_json = response.json()
+        graph_svg = response_json["graph_svg"]
+        relation_json = response_json["relation_json"]
+        
+        return graph_svg, relation_json
+    
+    def build_up_relation_graph(self, text, existing_relations):
+        endpoint = f"{self.base_url}/extend_entity_relations"
+        data = {"text": str(text), "existing_relations": str(existing_relations), "max_new_tokens": 512}
         response = requests.post(endpoint, json=data)
         response.raise_for_status()
         

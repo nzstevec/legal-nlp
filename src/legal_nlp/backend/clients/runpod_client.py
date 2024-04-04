@@ -15,7 +15,7 @@ class RunpodClient:
         output = [x["output"] for x in stream_json["stream"]]
         return output
 
-    def queue_async_job(self, messages, stream=False,  generation_args={}):
+    def queue_async_job(self, messages, stream=False,  generation_args={}, prompt=None):
         endpoint = f"{self.base_uri}/run"
         
         headers = {
@@ -34,6 +34,7 @@ class RunpodClient:
                 "top_k": generation_args.get('top_k', 30),
                 "add_bos_token": generation_args.get('add_bos_token', False),
                 "use_lora": generation_args.get('use_lora', False),
+                "prompt": prompt
             }
         }
 
@@ -67,9 +68,9 @@ class RunpodClient:
         else:
             yield status['output']['response']
 
-    def get_gpt_response(self, messages, generation_args={}):
+    def get_gpt_response(self, messages, generation_args={}, prompt=None):
         response = ""
-        response_generator = self.queue_async_job(messages, stream=False,  generation_args=generation_args)
+        response_generator = self.queue_async_job(messages, stream=False,  generation_args=generation_args, prompt=prompt)
         for message in response_generator:
             response += message
         
