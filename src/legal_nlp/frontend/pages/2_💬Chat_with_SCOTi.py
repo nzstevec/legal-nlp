@@ -1,10 +1,10 @@
 import streamlit as st
-import graphviz
 import time
 from fuzzywuzzy import fuzz
 from typing import List
 
 from clients.runpod_client import RunpodClient
+from clients.nlp_api_client import APIClient
 from streamlit_extras.app_logo import add_logo
 
 from config import Config, PageConfig
@@ -40,25 +40,7 @@ def get_relation_graph():
         + st.session_state['ner_text_tagged'] \
         + "\n</hidden_message>\n" + visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
     
-    # Placeholder sleep
-    # time.sleep(5)
-    
-    # Define the DOT representation of the graph
-    dot_graph = """
-    digraph G {
-        "Carmichael" -> "OneSteel" [label="Contracted_With"];
-        "OneSteel" -> "Whyalla" [label="Arranged_For_Shipment"];
-        "Whyalla" -> "Mackay" [label="Shipped_To"];
-        "BBC" -> "OneSteel" [label="Prepared_Stowage_Plan"];
-        "OneSteel" -> "OneSteel's subcontractor" [label="Loaded_Onto_Ship"];
-    }
-    """
-
-    # Render the graph from the DOT representation
-    graph = graphviz.Source(dot_graph)
-
-    # Convert the graph to SVG format
-    graph_svg = graph.pipe(format="svg").decode("utf-8")
+    graph_svg = api_client.get_relation_graph(st.session_state['ner_text_tagged']) 
 
     # Render the SVG image with a responsive layout
     html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
@@ -140,7 +122,9 @@ def get_prompt_fuzzy_matched(
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 st.title("Chat with SCOTi")
 
-client = RunpodClient()
+# Initialize the API client with the backend URL
+api_client = APIClient(Config.NLP_CONNECTION_STRING)
+runpod_client = RunpodClient()
 
 # Initialize chat history
 if "messages_visible" not in st.session_state or "messages_hidden" not in st.session_state:
@@ -181,7 +165,7 @@ if prompt := st.chat_input("Enter message here..."):
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
         else:
-            response_generator = client.queue_async_job(
+            response_generator = runpod_client.queue_async_job(
                 messages=[
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages_hidden
@@ -197,7 +181,7 @@ if prompt := st.chat_input("Enter message here..."):
 with st.sidebar:
     description = st.markdown(
         f"""
-SCOTi **This bit I don't know what we want scoti to be answering questions about** answer questions about your legal documents too.
+Chat with SCOTi directly and ask any questions about your legal documents!
 """
     )
     _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")

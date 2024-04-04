@@ -6,9 +6,7 @@ python -m spacy download en_core_web_sm
 
 git lfs install
 
-cd src/legal_nlp
-
-mkdir models
+cd src/legal_nlp/nlp/models
 
 cd models
 

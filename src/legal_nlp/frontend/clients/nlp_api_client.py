@@ -18,3 +18,11 @@ class APIClient:
         response.raise_for_status()
         
         return response.json()
+    
+    def get_relation_graph(self, text):
+        endpoint = f"{self.base_url}/entity_relations"
+        data = {"text": str(text)}
+        response = requests.post(endpoint, json=data)
+        response.raise_for_status()
+        
+        return response.json()
