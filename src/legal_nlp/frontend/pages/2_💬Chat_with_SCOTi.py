@@ -1,6 +1,8 @@
 import streamlit as st
 import graphviz
 import time
+from fuzzywuzzy import fuzz
+from typing import List
 
 from clients.runpod_client import RunpodClient
 from streamlit_extras.app_logo import add_logo
@@ -16,13 +18,19 @@ st.set_page_config(
 SCOTI_AVATAR = "frontend/static/images/chatbot_avatars/scoti.png"
 USER_AVATAR = "frontend/static/images/chatbot_avatars/user.png"
 
-SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2_cropped.gif"
+SCOTI_LOADING_GIF = "frontend/static/gifs/SCOTi_13_somersault_V1.gif"
+SCOTI_HAPPY_GIF = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2.gif"
+SCOTI_WAITING_GIF = "frontend/static/gifs/SCOTi_05_Laying-down_V2.gif"
+
+if "current_gif" not in st.session_state:
+    # Scoti wagging tail is default
+    st.session_state["current_gif"] = SCOTI_HAPPY_GIF
 
 
 def get_relation_graph():
     # Placeholder sleep
     time.sleep(5)
-    
+
     # Define the DOT representation of the graph
     dot_graph = """
     digraph G {
@@ -38,7 +46,7 @@ def get_relation_graph():
     graph = graphviz.Source(dot_graph)
 
     # Convert the graph to SVG format
-    graph_svg = graph.pipe(format='svg').decode('utf-8')
+    graph_svg = graph.pipe(format="svg").decode("utf-8")
 
     # Render the SVG image with a responsive layout
     html = f"""
@@ -47,8 +55,9 @@ def get_relation_graph():
     </div>
     """
     st.components.v1.html(html, height=420)
-    
+
     return "Here is the relations for..."
+
 
 def reset_conversation():
     st.session_state.messages = [
@@ -57,10 +66,30 @@ def reset_conversation():
             "content": "Let's start a new conversation. What would you like to ask me?",
         }
     ]
-    
-SCOTI_FUNCTIONS = {
-    "Show me the relation graph for this document": get_relation_graph
-}
+
+    st.session_state["current_gif"] = SCOTI_WAITING_GIF
+
+
+SCOTI_FUNCTIONS = {"Show me the relation graph for this document": get_relation_graph}
+
+
+def get_prompt_fuzzy_matched(
+    input_prompt: str,
+    choices: List[str] = SCOTI_FUNCTIONS.keys(),
+    fuzzy_thresh: float = 0.65,
+) -> str:
+    """
+    If a match exceeds the fuzzy threshold, it will be used. It will take the first match which is above the threshold.
+
+    If no match is found, it will return the input_prompt to be used in the async gpt call.
+    """
+
+    for choice in choices:
+        print(fuzz.ratio(input_prompt, choice))
+        if fuzz.ratio(input_prompt, choice) > fuzzy_thresh:
+            return choice
+    return input_prompt
+
 
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 st.title("Chat with SCOTi")
@@ -73,7 +102,15 @@ if "messages" not in st.session_state:
         {
             "role": "assistant",
             "content": "Hey! I'm SCOTi. Ask me a question using the box below to get started.",
-        }
+        },
+        {
+            "role": "user",
+            "content": "Show me the relation graph for this document.",
+        },
+        # {
+        #     "role": "assistant",
+        #     "content": get_relation_graph,
+        # },
     ]
 
 # Display chat messages from history on app rerun
@@ -96,8 +133,16 @@ if prompt := st.chat_input("Enter message here..."):
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt)
 
+    # NOTE: Need to investigate what fuzzy threshold works best for the questions you'll be asking
+    prompt = get_prompt_fuzzy_matched(prompt)
+
+    if prompt in SCOTI_FUNCTIONS:
+        SCOTI_FUNCTIONS[prompt]()
+
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
+        st.session_state["current_gif"] = SCOTI_LOADING_GIF
+
         if prompt in SCOTI_FUNCTIONS:
             with st.spinner():
                 bot_response = SCOTI_FUNCTIONS[prompt.strip()]()
@@ -112,6 +157,7 @@ if prompt := st.chat_input("Enter message here..."):
             )
 
             bot_response = st.write_stream(response_generator)
+
     st.session_state.messages.append({"role": "assistant", "content": bot_response})
     st.button("Clear Conversation", on_click=reset_conversation)
 
@@ -122,7 +168,7 @@ with st.sidebar:
 SCOTi **This bit I don't know what we want scoti to be answering questions about** answer questions about your legal documents too.
 """
     )
-    scoti_gif_sizing, _ = st.columns((0.5, 0.5), gap="medium")
+    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
 
     with scoti_gif_sizing:
-        st.image(SCOTI_GIF_PATH)
+        st.image(st.session_state["current_gif"])
