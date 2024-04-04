@@ -1,5 +1,6 @@
 import streamlit as st
 import graphviz
+import time
 
 from clients.runpod_client import RunpodClient
 from streamlit_extras.app_logo import add_logo
@@ -19,6 +20,9 @@ SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2_cropped.gif"
 
 
 def get_relation_graph():
+    # Placeholder sleep
+    time.sleep(5)
+    
     # Define the DOT representation of the graph
     dot_graph = """
     digraph G {
@@ -95,7 +99,8 @@ if prompt := st.chat_input("Enter message here..."):
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
         if prompt in SCOTI_FUNCTIONS:
-            bot_response = SCOTI_FUNCTIONS[prompt.strip()]()
+            with st.spinner():
+                bot_response = SCOTI_FUNCTIONS[prompt.strip()]()
             st.write(bot_response)
         else:
             response_generator = client.queue_async_job(
