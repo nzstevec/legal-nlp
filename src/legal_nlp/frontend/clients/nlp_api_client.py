@@ -25,4 +25,8 @@ class APIClient:
         response = requests.post(endpoint, json=data)
         response.raise_for_status()
         
-        return response.json()
+        response_json = response.json()
+        graph_svg = response_json["graph_svg"]
+        relation_json = response_json["relation_json"]
+        
+        return graph_svg, relation_json

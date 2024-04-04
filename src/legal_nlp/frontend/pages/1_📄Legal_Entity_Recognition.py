@@ -158,19 +158,21 @@ with col2:
     )
     st.write('<h5 style="margin-top:1rem">Labels</h5>', unsafe_allow_html=True)
     st.write(ner_table_html, unsafe_allow_html=True)
-    # ui.table(data=ner_labels)
 
-if st.button("Process"):
-    try:
-        with st.spinner("Extracting Legal Entities..."):
-            highlight_html, ner_text_tagged = label_text_entities(text_input)
-            st.session_state['ner_highlight'] = highlight_html
-            st.session_state['ner_text_tagged'] = ner_text_tagged
-    except Exception as e:
-        st.error(f"Error processing text: {e}")
-
-if st.button("Send to SCOTi"):
-    switch_page("chat with scoti")
+# Process and send to scoti buttons
+col1_1, col1_2 = st.columns((0.6, 0.4), gap="medium")
+with col1_1:
+    if st.button("Process"):
+        try:
+            with st.spinner("Extracting Legal Entities..."):
+                highlight_html, ner_text_tagged = label_text_entities(text_input)
+                st.session_state['ner_highlight'] = highlight_html
+                st.session_state['ner_text_tagged'] = ner_text_tagged
+        except Exception as e:
+            st.error(f"Error processing text: {e}")
+with col1_2:
+    if st.button("Send to SCOTi"):
+        switch_page("chat with scoti")
 
 # Render text with ner label highlights
 st.markdown(st.session_state['ner_highlight'], unsafe_allow_html=True)

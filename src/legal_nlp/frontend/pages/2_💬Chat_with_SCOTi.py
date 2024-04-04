@@ -1,5 +1,6 @@
 import streamlit as st
-import time
+import json
+
 from fuzzywuzzy import fuzz
 from typing import List
 
@@ -33,14 +34,23 @@ def get_relation_graph():
     
     visible_response = "Here is the relation graph for your document."
     
-    hidden_response = "<hidden_message>Here is a document with entities extracted using NLP. " \
+    # Give the GPT model the original document
+    hidden_response = "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. " \
         "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. " \
         "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. " \
         "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n" \
         + st.session_state['ner_text_tagged'] \
-        + "\n</hidden_message>\n" + visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
+        + "\n<hidden_message_end>\n"
     
-    graph_svg = api_client.get_relation_graph(st.session_state['ner_text_tagged']) 
+    graph_svg, relation_json = api_client.get_relation_graph(st.session_state['ner_text_tagged']) 
+
+    # Give the GPT model the relations that it has extracted from the document
+    hidden_response += "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n" \
+        + json.dumps(relation_json) \
+        + "\n</hidden_message_end>\n"
+    
+    # End the message with the model presenting the generated graph to the user
+    hidden_response += visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
 
     # Render the SVG image with a responsive layout
     html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""

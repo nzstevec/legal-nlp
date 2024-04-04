@@ -66,3 +66,11 @@ class RunpodClient:
             yield "".join(output)
         else:
             yield status['output']['response']
+
+    def get_gpt_response(self, messages, generation_args={}):
+        response = ""
+        response_generator = self.queue_async_job(messages, stream=False,  generation_args=generation_args)
+        for message in response_generator:
+            response += message
+        
+        return message
