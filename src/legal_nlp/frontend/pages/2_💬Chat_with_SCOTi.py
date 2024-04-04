@@ -18,7 +18,7 @@ SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2_cropped.gif"
 
 
 def get_relation_graph():
-    print("GETTING GRAPH")
+    return "Here is the relations for..."
 
 def reset_conversation():
     st.session_state.messages = [
@@ -65,21 +65,22 @@ if prompt := st.chat_input("Enter message here..."):
     # Display user message in chat message container
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt)
-        
-    if prompt in SCOTI_FUNCTIONS:
-        SCOTI_FUNCTIONS[prompt]()
 
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
-        response_generator = client.queue_async_job(
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=Config.STREAM_CHAT,
-        )
+        if prompt in SCOTI_FUNCTIONS:
+            bot_response = SCOTI_FUNCTIONS[prompt.strip()]()
+            st.write(bot_response)
+        else:
+            response_generator = client.queue_async_job(
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                stream=Config.STREAM_CHAT,
+            )
 
-        bot_response = st.write_stream(response_generator)
+            bot_response = st.write_stream(response_generator)
     st.session_state.messages.append({"role": "assistant", "content": bot_response})
     st.button("Clear Conversation", on_click=reset_conversation)
 
