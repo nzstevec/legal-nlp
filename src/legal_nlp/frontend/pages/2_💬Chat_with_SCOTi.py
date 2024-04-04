@@ -27,9 +27,9 @@ if "current_gif" not in st.session_state:
     st.session_state["current_gif"] = SCOTI_HAPPY_GIF
 
 
-def get_relation_graph():
-    # Placeholder sleep
-    time.sleep(5)
+def get_relation_graph(sleep: bool = True):
+    if sleep:
+        time.sleep(5)
 
     # Define the DOT representation of the graph
     dot_graph = """
@@ -54,9 +54,8 @@ def get_relation_graph():
         {graph_svg}
     </div>
     """
-    st.components.v1.html(html, height=420)
 
-    return "Here is the relations for..."
+    return "Here is the relations for...", html
 
 
 def reset_conversation():
@@ -70,13 +69,15 @@ def reset_conversation():
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
 
 
+# NOTE: Right now, I've set this up so that the funciton returns two args. First is markdown
+# i.e. what scoti will say, the second is the custom component to be rendered.
 SCOTI_FUNCTIONS = {"Show me the relation graph for this document": get_relation_graph}
 
 
 def get_prompt_fuzzy_matched(
     input_prompt: str,
     choices: List[str] = SCOTI_FUNCTIONS.keys(),
-    fuzzy_thresh: float = 0.65,
+    fuzzy_thresh: int = 65,
 ) -> str:
     """
     If a match exceeds the fuzzy threshold, it will be used. It will take the first match which is above the threshold.
@@ -85,9 +86,10 @@ def get_prompt_fuzzy_matched(
     """
 
     for choice in choices:
-        print(fuzz.ratio(input_prompt, choice))
-        if fuzz.ratio(input_prompt, choice) > fuzzy_thresh:
+        similarity_score = fuzz.ratio(input_prompt, choice)
+        if similarity_score > fuzzy_thresh:  # fuzzy_thresh is an int in [0,100]
             return choice
+
     return input_prompt
 
 
@@ -107,10 +109,10 @@ if "messages" not in st.session_state:
             "role": "user",
             "content": "Show me the relation graph for this document.",
         },
-        # {
-        #     "role": "assistant",
-        #     "content": get_relation_graph,
-        # },
+        {  # NOTE: Something fishy here it is not properly being saved
+            "role": "assistant_custom_component",
+            "content": get_relation_graph(sleep=False)[1],
+        },
     ]
 
 # Display chat messages from history on app rerun
@@ -122,8 +124,12 @@ for message in st.session_state.messages:
     else:
         avatar = SCOTI_AVATAR
 
-    with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"])
+    if role != "assistant_custom_component":
+        with st.chat_message(message["role"], avatar=avatar):
+            st.markdown(message["content"])
+    else:
+        st.components.v1.html(message["content"], height=420)
+
 
 # Accept user input
 if prompt := st.chat_input("Enter message here..."):
@@ -136,17 +142,18 @@ if prompt := st.chat_input("Enter message here..."):
     # NOTE: Need to investigate what fuzzy threshold works best for the questions you'll be asking
     prompt = get_prompt_fuzzy_matched(prompt)
 
-    if prompt in SCOTI_FUNCTIONS:
-        SCOTI_FUNCTIONS[prompt]()
-
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
         st.session_state["current_gif"] = SCOTI_LOADING_GIF
 
         if prompt in SCOTI_FUNCTIONS:
             with st.spinner():
-                bot_response = SCOTI_FUNCTIONS[prompt.strip()]()
+                bot_response, custom_component = SCOTI_FUNCTIONS[prompt.strip()]()
             st.write(bot_response)
+
+            # NOTE: To ensure the component comes after scoti saying "here is the relation..."
+            if custom_component:
+                st.components.v1.html(custom_component, height=420)
         else:
             response_generator = client.queue_async_job(
                 messages=[
