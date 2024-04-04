@@ -3,6 +3,7 @@ import streamlit as st
 import colorsys
 
 from streamlit_extras.app_logo import add_logo
+from streamlit_extras.switch_page_button import switch_page
 import streamlit_shadcn_ui as ui
 
 from clients.nlp_api_client import APIClient
@@ -20,6 +21,12 @@ COLOR_PALETTE = [
     "#FEE3CB",
     "#FFD4B8",
 ]
+
+# Initialize state
+if 'ner_highlight' not in st.session_state:
+    st.session_state['ner_highlight'] = ""
+if 'ner_text_tagged' not in st.session_state: 
+    st.session_state['ner_text_tagged'] = ""
 
 
 def saturate_lighten_color(hex_color, percentage):
@@ -60,7 +67,20 @@ def highlight_ner(text, ner_tags, label_colors):
     return highlighted_text
 
 
-def render_highlight():
+def add_plaintext_tags(text, ner_tags):
+    highlighted_text = ""
+    current_index = 0
+    for entity, label in ner_tags:
+        start_index = text.find(entity, current_index)
+        end_index = start_index + len(entity)
+        highlighted_text += text[current_index:start_index]
+        highlighted_text += f'<{label}>{entity}</{label}>'
+        current_index = end_index
+    highlighted_text += text[current_index:]
+    return highlighted_text
+    
+
+def label_text_entities(text_input):
     # Call the API client to process the text
     response = api_client.process_text(text_input)
     ner_tags = response["ner_tags"]
@@ -74,9 +94,10 @@ def render_highlight():
         ]  # Use modulus to cycle through the color palette
 
     # Highlight NER tags using dynamic labels and colors
-    highlighted_text = highlight_ner(text_input, ner_tags, label_colors)
+    highlighted_html = highlight_ner(text_input, ner_tags, label_colors)
+    tagged_plaintext = add_plaintext_tags(text_input, ner_tags)
 
-    return highlighted_text
+    return highlighted_html, tagged_plaintext
 
 
 def split_list_into_df(my_list, num_columns):
@@ -142,11 +163,17 @@ with col2:
 if st.button("Process"):
     try:
         with st.spinner("Extracting Legal Entities..."):
-            highlighted_text = render_highlight()
-        st.markdown(highlighted_text, unsafe_allow_html=True)
-
+            highlight_html, ner_text_tagged = label_text_entities(text_input)
+            st.session_state['ner_highlight'] = highlight_html
+            st.session_state['ner_text_tagged'] = ner_text_tagged
     except Exception as e:
         st.error(f"Error processing text: {e}")
+
+if st.button("Send to SCOTi"):
+    switch_page("chat with scoti")
+
+# Render text with ner label highlights
+st.markdown(st.session_state['ner_highlight'], unsafe_allow_html=True)
 
 with st.sidebar:
     description = st.markdown(
