@@ -9,7 +9,7 @@ import streamlit_shadcn_ui as ui
 from clients.nlp_api_client import APIClient
 from config import Config, PageConfig
 
-SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_10_Sniffing-Clues_V2_cropped.gif"
+SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_10_Sniffing-Clues_V2.gif"
 
 # Define a limited color palette
 COLOR_PALETTE = [
@@ -181,7 +181,7 @@ with st.sidebar:
 SCOTi can extract legal entities from text with ease. Simply enter your text, and let SCOTi extract key information for you!
 """
     )
-    scoti_gif_sizing, _ = st.columns((0.5, 0.5), gap="medium")
+    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
 
     with scoti_gif_sizing:
         st.image(SCOTI_GIF_PATH)
