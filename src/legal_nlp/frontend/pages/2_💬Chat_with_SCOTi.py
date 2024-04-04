@@ -16,10 +16,9 @@ USER_AVATAR = "🧑‍💻"
 
 SCOTI_GIF_PATH = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2_cropped.gif"
 
-add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
-st.title("Chat with SCOTi")
-
+def get_relation_graph():
+    print("GETTING GRAPH")
 
 def reset_conversation():
     st.session_state.messages = [
@@ -28,9 +27,14 @@ def reset_conversation():
             "content": "Let's start a new conversation. What would you like to ask me?",
         }
     ]
+    
+SCOTI_FUNCTIONS = {
+    "Show me the relation graph for this document": get_relation_graph
+}
 
+add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
+st.title("Chat with SCOTi")
 
-# Set OpenAI API key from Streamlit secrets
 client = RunpodClient()
 
 # Initialize chat history
@@ -61,6 +65,9 @@ if prompt := st.chat_input("Enter message here..."):
     # Display user message in chat message container
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt)
+        
+    if prompt in SCOTI_FUNCTIONS:
+        SCOTI_FUNCTIONS[prompt]()
 
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
