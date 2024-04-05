@@ -8,6 +8,7 @@ from typing import List
 from clients.runpod_client import RunpodClient
 from clients.nlp_api_client import APIClient
 from streamlit_extras.app_logo import add_logo
+import streamlit_agraph as agraph
 
 from config import Config, PageConfig
 
@@ -31,22 +32,62 @@ if "current_gif" not in st.session_state:
 
 def extract_relation_json_from_text(text):
     # Define a regular expression pattern to match each dictionary
-    pattern = (
-        r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+}\s*}'
-    )
+    pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+},\s*"additional_info":\s*{[^}]+}\s*}'
 
     # Find all matches of the pattern in the text
     matches = re.findall(pattern, text, re.DOTALL)
     return json.loads(f'[{",".join(matches)}]')
 
 
-if "markdown_content" not in st.session_state:
-    st.session_state.markdown_content = (
-        "This is a <span style='color: blue;'>span-like</span> element."
+def strip_angle_brackets(entity):
+    parts = entity.split(">")
+    return parts[-1] if len(parts) == 1 else parts[1].split("<")[0]
+
+
+def draw_relation_graph(relation_json):
+    nodes = []
+    edges = []
+    node_ids = []
+
+    for item in relation_json:
+        entity1 = strip_angle_brackets(item["entity1"]["entity"])
+        entity2 = strip_angle_brackets(item["entity2"]["entity"])
+        relation = item["relation"]
+        description = item["additional_info"]["description"]
+
+        if entity1 not in node_ids:
+            nodes.append(agraph.Node(id=entity1, label=entity1, size=5, shape="dot"))
+            node_ids.append(entity1)
+
+        if entity2 not in node_ids:
+            nodes.append(agraph.Node(id=entity2, label=entity2, size=5, shape="dot"))
+            node_ids.append(entity2)
+
+        edges.append(
+            agraph.Edge(
+                source=entity1,
+                label=relation,
+                target=entity2,
+                dashes=False,
+                title=description,
+            )
+        )
+
+    config = agraph.Config(
+        width=1400,
+        height=600,
+        directed=True,
+        physics=True,
+        hierarchical=False,
+        # **kwargs
     )
 
+    return_value = agraph.agraph(nodes=nodes, edges=edges, config=config)
 
-def get_relation_graph():
+    return return_value
+
+
+def get_relation_graph(interactive=True):
     if "ner_text_tagged" not in st.session_state:
         response = (
             "Please return to the entity extraction page and upload a document first."
@@ -69,7 +110,7 @@ def get_relation_graph():
         "prev_relation_graph" in st.session_state
         and st.session_state["prev_relation_graph"] is not None
     ):
-        previous_graph = st.session_state["prev_relation_graph"]
+        previous_graph = json.dumps(st.session_state["prev_relation_graph"], indent=4)
     else:
         previous_graph = ""
 
@@ -91,11 +132,15 @@ def get_relation_graph():
         + '\n![graph of entity relations](relation_graph.png "Relationship Graph")'
     )
 
-    # print(hidden_response)
-
-    # Add an overflow scroll bar for the graph
-    html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
-    visible_response += html
+    if interactive:
+        # Add the json to the visible_messages so that it can be rendered on reload
+        visible_response += "\n" + json.dumps(relation_json)
+    else:
+        # Add an overflow scroll bar for the graph
+        html = (
+            f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
+        )
+        visible_response += html
 
     # If the current graph is the same length as the previous graph assume finished
     if previous_graph != "" and len(relation_json) <= len(json.loads(previous_graph)):
@@ -103,8 +148,7 @@ def get_relation_graph():
     else:
         #  Else cache current partial graph and continue next call
         existing_relations = extract_relation_json_from_text(hidden_response)
-        existing_relations_propmt = json.dumps(existing_relations, indent=4)
-        st.session_state["prev_relation_graph"] = existing_relations_propmt
+        st.session_state["prev_relation_graph"] = existing_relations
 
     return visible_response, hidden_response
 
@@ -206,7 +250,14 @@ for i, message in enumerate(st.session_state.messages_visible):
         avatar = SCOTI_AVATAR
 
     with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"], unsafe_allow_html=True)
+        if '"relation":' in message["content"]:
+            # Assume this response includes a relation graph
+            st.markdown(message["content"].split("[")[0])
+            relation_json = extract_relation_json_from_text(message["content"])
+            draw_relation_graph(relation_json)
+        else:
+            # Assume this is just a text response
+            st.markdown(message["content"], unsafe_allow_html=True)
 
         # If last message and we have not finished rendering the graph then continue rendering, reloading the chat as we get new updates to the graph
         if (
