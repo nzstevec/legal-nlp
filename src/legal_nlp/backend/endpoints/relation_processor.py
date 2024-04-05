@@ -58,11 +58,15 @@ class RelationProcessor:
     def get_relation_graph(
         self, text: str, existing_relations: str = "", max_new_tokens: int = 2048
     ):
+
+        # NOTE: I think the key to improving this is to improve the entities extracted. Some of them are low quality, which result in
+        # seriously whacky relationships being defined
         generate_relations_json_prompt = """You are an expert entity relation extractor for legal documents. 
 You will be given a document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date.
-Please extract ALL the relations between ALL the tagged entities in the text in a json format. The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
+Please extract ALL the relations between the tagged entities in the text in a json format. The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
 Make sure to capture the direction of the relationship as well, for example in the relation Carmichael Contracted_With OneSteel, Carmichael should be entity1 and OneSteel should be entity2.
 The relationships you define will be used to build a knowledge graph to inform key officials. You must be accurate, defining clear and consistent relationships.
+You should only use the entities which are appropriate. An entity should be clear, concise, and non duplicated. The goal is to produce an informative knowledge graph, so not all entities are required.
 
 Here is a sample for the output json schema:
 ```json
