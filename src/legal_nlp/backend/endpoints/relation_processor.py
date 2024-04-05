@@ -3,6 +3,7 @@ from clients.runpod_client import RunpodClient
 import json
 import re
 from transformers import AutoTokenizer
+import html
 
 
 class RelationProcessor:
@@ -12,7 +13,7 @@ class RelationProcessor:
 
     def extract_json_from_text(self, text):
         # Define a regular expression pattern to match each dictionary
-        pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+}\s*}'
+        pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+},\s*"additional_info":\s*{[^}]+}\s*}'
 
         # Find all matches of the pattern in the text
         matches = re.findall(pattern, text, re.DOTALL)
@@ -32,10 +33,13 @@ class RelationProcessor:
             relation = item['relation']
             entity1 = self.strip_angle_brackets(item['entity1']['entity'])
             entity2 = self.strip_angle_brackets(item['entity2']['entity'])
-
-            dot += f'"{entity1}" -> "{entity2}" [label="{relation}"];\n'
-
+            description = html.escape(item['additional_info']['description'])
+            
+            dot += f'"{entity1}" -> "{entity2}" [label="{relation}" tooltip="{description}" labeltooltip="{description}"];\n'
+            
         dot += "}"
+        
+        print(dot)
         return dot
 
     def build_up_relation_graph(self, text: str, existing_relations: str, max_new_tokens: int):
@@ -48,7 +52,8 @@ class RelationProcessor:
     def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048):
         generate_relations_json_prompt = """You are an expert entity relation extractor for legal documents. 
 You will be given a document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date.
-Please extract ALL the relations between ALL the tagged entities in the text in a json format. The json should include the abbreviated relation, and the relevant entity pair.
+Please extract ALL the relations between ALL the tagged entities in the text in a json format. The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
+Make sure to capture the direction of the relationship as well, for example in the relation Carmichael Contracted_With OneSteel, Carmichael should be entity1 and OneSteel should be entity2.
 
 Here is a sample for the output json schema:
 ```json
@@ -56,7 +61,10 @@ Here is a sample for the output json schema:
   {
   "relation": "Contracted_With",
   "entity1": {"entity": "<PETITIONER>Carmichael</PETITIONER>", "type": "Person"},
-  "entity2": {"entity": "<ORG>OneSteel</ORG>", "type": "Organization"}
+  "entity2": {"entity": "<ORG>OneSteel</ORG>", "type": "Organization"},
+  "additional_info": {
+    "description": "The appellant ('Carmichael', the shipper) contracted with the second respondent (OneSteel) for the manufacture and supply of head-hardened steel rails."
+  }
 ]
 ```
 ONLY RESPOND IN JSON!
