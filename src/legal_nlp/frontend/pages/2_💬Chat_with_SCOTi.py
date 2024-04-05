@@ -98,10 +98,6 @@ def reset_conversation():
     ]
     
     st.session_state['messages_hidden'] = [
-        {
-            "role": "assistant",
-            "content": "Let's start a new conversation. What would you like to ask me?",
-        }
     ]
     
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
