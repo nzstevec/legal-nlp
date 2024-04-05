@@ -171,6 +171,18 @@ def get_prompt_fuzzy_matched(
 
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
+with st.sidebar:
+    description = st.markdown(
+        f"""
+Chat with SCOTi directly and ask any questions about your legal documents!
+"""
+    )
+    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
+
+    with scoti_gif_sizing:
+        st.image(st.session_state["current_gif"])
+
+
 st.title("Chat with SCOTi")
 
 # Initialize the API client with the backend URL
@@ -183,18 +195,6 @@ if (
     or "messages_hidden" not in st.session_state
 ):
     reset_conversation()
-
-
-with st.sidebar:
-    description = st.markdown(
-        f"""
-Chat with SCOTi directly and ask any questions about your legal documents!If you'd like to upload your own documents, use the file upload box below.
-"""
-    )
-    _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
-
-    with scoti_gif_sizing:
-        st.image(st.session_state["current_gif"])
 
 # Display chat history on page re-render
 for i, message in enumerate(st.session_state.messages_visible):
@@ -226,14 +226,12 @@ for i, message in enumerate(st.session_state.messages_visible):
 # Accept user input
 if prompt := st.chat_input("Enter message here..."):
     # Add user message to chat history
-    add_visible_message_to_state("user", prompt)
-
+    add_message_to_both_states("user", prompt)
     # Display user message in chat message container
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt)
 
     # NOTE: Need to investigate what fuzzy threshold works best for the questions you'll be asking
-    # NOTE 2: I am appending the contents from written files AFTER fuzzy matching. We need to think if this is what we want
     prompt = get_prompt_fuzzy_matched(prompt.strip())
 
     # Display assistant response in chat message container
@@ -249,7 +247,6 @@ if prompt := st.chat_input("Enter message here..."):
             # Re-render page so custom components can continue rendering
             st.rerun()
         else:
-
             response_generator = runpod_client.queue_async_job(
                 messages=[
                     {"role": m["role"], "content": m["content"]}
