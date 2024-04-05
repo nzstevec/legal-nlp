@@ -1,10 +1,8 @@
 --extra-index-url https://download.pytorch.org/whl/cu121
 torch==2.2.0
-transformers==4.39.3
 tokenizers
 spacy
 spacy-transformers==1.3.4
-transformers<4.18,>=4.1
 spacy-streamlit==1.0.6
 streamlit==1.32.2
 streamlit-shadcn-ui==0.1.18

@@ -2,6 +2,9 @@ conda create -n legal-nlp python=3.11
 
 pip install -r requirements.txt
 
+# spacy-transformers has a dependency for lower transformers version but mistral requires higher..
+pip install transformers==4.39.3
+
 python -m spacy download en_core_web_sm
 
 git lfs install

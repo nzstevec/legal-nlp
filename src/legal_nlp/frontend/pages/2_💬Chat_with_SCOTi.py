@@ -58,7 +58,7 @@ def draw_relation_graph(relation_json):
         if entity1 not in node_ids:
             nodes.append( agraph.Node(id=entity1, 
                             label=entity1, 
-                            size=15, 
+                            size=5, 
                             shape="dot"
                             ) 
                         )
@@ -67,7 +67,7 @@ def draw_relation_graph(relation_json):
         if entity2 not in node_ids:
             nodes.append( agraph.Node(id=entity2, 
                             label=entity2, 
-                            size=15,
+                            size=5,
                             shape="dot"
                             ) 
                         )
@@ -75,12 +75,14 @@ def draw_relation_graph(relation_json):
             
         edges.append( agraph.Edge(source=entity1, 
                         label=relation, 
-                        target=entity2
+                        target=entity2,
+                        dashes=False,
+                        title=description
                         ) 
                     ) 
 
-    config = agraph.Config(width=1100,
-                    height=650,
+    config = agraph.Config(width=1400,
+                    height=600,
                     directed=True, 
                     physics=True, 
                     hierarchical=False,
