@@ -9,7 +9,6 @@ from clients.runpod_client import RunpodClient
 from clients.nlp_api_client import APIClient
 from streamlit_extras.app_logo import add_logo
 
-from utils.text_extraction import load_file_contents, combine_prompt_with_file_contents
 from config import Config, PageConfig
 
 st.set_page_config(
@@ -185,25 +184,13 @@ if (
 ):
     reset_conversation()
 
-if "extra_context" not in st.session_state:
-    st.session_state["extra_context"] = []
+
 with st.sidebar:
     description = st.markdown(
         f"""
 Chat with SCOTi directly and ask any questions about your legal documents!If you'd like to upload your own documents, use the file upload box below.
 """
     )
-    # File Upload in sidebar ??
-    uploaded_files = st.file_uploader(
-        label="File Uploader",
-        label_visibility="hidden",
-        accept_multiple_files=True,
-        type=[".docx", ".pdf", ".txt"],
-    )
-
-    if uploaded_files:
-        st.session_state.extra_context = load_file_contents(uploaded_files)
-
     _, scoti_gif_sizing, _ = st.columns((0.25, 0.5, 0.25), gap="medium")
 
     with scoti_gif_sizing:
@@ -248,10 +235,6 @@ if prompt := st.chat_input("Enter message here..."):
     # NOTE: Need to investigate what fuzzy threshold works best for the questions you'll be asking
     # NOTE 2: I am appending the contents from written files AFTER fuzzy matching. We need to think if this is what we want
     prompt = get_prompt_fuzzy_matched(prompt.strip())
-
-    # Now, get extra contents
-    prompt = combine_prompt_with_file_contents(prompt, st.session_state.extra_context)
-    add_hidden_message_to_state("user", prompt)
 
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar=SCOTI_AVATAR):
