@@ -158,13 +158,15 @@ st.title("Legal Entity Recognition")
 # Initialize the API client with the backend URL
 api_client = APIClient(Config.NLP_CONNECTION_STRING)
 
+# Can accept multiple files currently
 uploaded_files = st.file_uploader(
     label="File Uploader",
     label_visibility="hidden",
     accept_multiple_files=True,
-    type=[".docx", ".pdf", ".txt"],
+    type=[".docx", ".pdf", ".txt", ".rtf"],
 )
 
+# This needs to be before where the text_area input box is defined
 if uploaded_files:
     st.session_state.ner_input = load_file_contents(uploaded_files)
 
