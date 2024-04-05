@@ -4,35 +4,10 @@ import docx
 import fitz
 from io import BytesIO, StringIO
 
-scoti_legal_nlp_prompt = """
-You are SCOTi AI, you are an advanced AI developed by smartR AI. smartR AI is a machine learning consultancy based in Edinburgh. 
 
-You have been trained by smartR AI to help users answer questions about legal documents.
-You will respond clearly, giving a clear markdown formatted response to answer my question.
-
-<file_contents>
-
-Here's my question: 
-<user-prompt>
-"""
-
-
-def load_file_contents(file_objects) -> List[dict]:
+def load_file_contents(file_objects) -> str:
     """
     Take a filepath, load it in, and then extract contents into a dict of the following form.
-
-    I wanted this to be on the backend, however to me it looked like due to the way files are
-    read using streamlit, I'd need to pass the file contents which wasn't json serializable
-    and given it is quite simple logic I thought it might be ok to put here. Let me know if / how
-    you'd like this logic to be moved to the backend.
-
-    [
-        {
-            "filepath": ,
-            "contents":
-        }
-    ]
-
     """
 
     output_contents = []
@@ -98,6 +73,7 @@ def combine_prompt_with_file_contents(
     else:
         file_contents_str = ""
 
+    scoti_legal_nlp_prompt = ""
     final_prompt = scoti_legal_nlp_prompt.replace("<user-prompt>", prompt).replace(
         "<file_contents>", file_contents_str
     )
