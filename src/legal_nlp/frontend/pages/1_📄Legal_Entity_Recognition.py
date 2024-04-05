@@ -87,16 +87,16 @@ def highlight_ner(text, ner_tags, label_colors):
 
 
 def add_plaintext_tags(text, ner_tags):
-    highlighted_text = ""
+    tagged_text = ""
     current_index = 0
     for entity, label in ner_tags:
         start_index = text.find(entity, current_index)
         end_index = start_index + len(entity)
-        highlighted_text += text[current_index:start_index]
-        highlighted_text += f'<{label}>{entity}</{label}>'
+        tagged_text += text[current_index:start_index]
+        tagged_text += f'<{label}>{entity}</{label}>'
         current_index = end_index
-    highlighted_text += text[current_index:]
-    return highlighted_text
+    tagged_text += text[current_index:]
+    return tagged_text
     
 
 def label_text_entities(text_input):
