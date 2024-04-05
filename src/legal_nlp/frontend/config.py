@@ -4,11 +4,9 @@ import os
 class Config:
     # Default values
     NLP_CONNECTION_STRING = os.getenv(
-        "NLP_API_CONNECTION_STRING", "http://127.0.0.1:8549"
+        "NLP_API_CONNECTION_STRING", "http://127.0.0.1:8543"
     )
-    RUNPOD_BEARER_TOKEN = os.getenv(
-        "RUNPOD_BEARER_TOKEN", "ZXNJGLFM2X390VJJSJY8910YHQLISIY5H9A67JHZ"
-    )
+    RUNPOD_BEARER_TOKEN = os.getenv("RUNPOD_BEARER_TOKEN", "")
     RUNPOD_BASE_URI = os.getenv(
         "RUNPOD_BASE_URI", "https://api.runpod.ai/v2/5bniip0yjm37iq"
     )
