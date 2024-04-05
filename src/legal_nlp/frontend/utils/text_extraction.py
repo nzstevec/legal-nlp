@@ -59,9 +59,9 @@ def load_file_contents(file_objects) -> List[dict]:
             # !TODO: Do we want to raise an error here?
             text = ""
 
-        output_contents.append({"filepath": filepath, "contents": text})
+        output_contents.append(f"Filename: {filepath}\n\n{text}\n\n")
 
-    return output_contents
+    return "".join(output_contents)
 
 
 def combine_prompt_with_file_contents(
