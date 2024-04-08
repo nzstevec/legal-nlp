@@ -29,7 +29,7 @@ if "current_gif" not in st.session_state:
     # Scoti wagging tail is default
     st.session_state["current_gif"] = SCOTI_HAPPY_GIF
 
-    
+
 def extract_relation_json_from_text(text):
     # Define a regular expression pattern to match each dictionary
     pattern = r'{\s*"relation":\s*"[^"]+",\s*"entity1":\s*{[^}]+},\s*"entity2":\s*{[^}]+},\s*"additional_info":\s*{[^}]+}\s*}'
@@ -40,14 +40,17 @@ def extract_relation_json_from_text(text):
 
 
 def strip_angle_brackets(entity):
-    parts = entity.split('>')
-    return parts[-1] if len(parts) == 1 else parts[1].split('<')[0]
+    parts = entity.split(">")
+    return parts[-1] if len(parts) == 1 else parts[1].split("<")[0]
 
 
 def draw_relation_graph(relation_json):
     nodes = []
     edges = []
     node_ids = []
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
+
+=======
     color_mapping = {
         "PERSON": "#DBEBC2", 
         "RESPONDENT": "#DBEBC2", 
@@ -59,13 +62,17 @@ def draw_relation_graph(relation_json):
         "COURT": "#F7A7A6"
         }
     
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b
     for item in relation_json:
         entity1 = strip_angle_brackets(item["entity1"]["entity"])
         entity2 = strip_angle_brackets(item["entity2"]["entity"])
         relation = item["relation"]
         description = item["additional_info"]["description"]
-        
+
         if entity1 not in node_ids:
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
+            nodes.append(agraph.Node(id=entity1, label=entity1, size=5, shape="dot"))
+=======
             nodes.append( agraph.Node(id=entity1, 
                             label=entity1, 
                             size=7, 
@@ -73,9 +80,14 @@ def draw_relation_graph(relation_json):
                             color=color_mapping.get(item["entity1"]["type"].upper())
                             ) 
                         )
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b
             node_ids.append(entity1)
-            
+
         if entity2 not in node_ids:
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
+            nodes.append(agraph.Node(id=entity2, label=entity2, size=5, shape="dot"))
+            node_ids.append(entity2)
+=======
             nodes.append( agraph.Node(id=entity2, 
                             label=entity2, 
                             size=7,
@@ -106,109 +118,137 @@ def draw_relation_graph(relation_json):
                         # }
                         ) 
                     ) 
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b
 
-    config = agraph.Config(width=1400,
-                    height=600,
-                    directed=True, 
-                    physics=True, 
-                    hierarchical=False,
-                    # **kwargs
-                    )
+        edges.append(
+            agraph.Edge(
+                source=entity1,
+                label=relation,
+                target=entity2,
+                dashes=False,
+                title=description,
+            )
+        )
 
-    return_value = agraph.agraph(nodes=nodes, 
-                        edges=edges, 
-                        config=config)
-    
+    config = agraph.Config(
+        width=1400,
+        height=600,
+        directed=True,
+        physics=True,
+        hierarchical=False,
+        # **kwargs
+    )
+
+    return_value = agraph.agraph(nodes=nodes, edges=edges, config=config)
+
     return return_value
 
+
 def get_relation_graph(interactive=True):
-    if 'ner_text_tagged' not in st.session_state:
-        response = "Please return to the entity extraction page and upload a document first."
+    if "ner_text_tagged" not in st.session_state:
+        response = (
+            "Please return to the entity extraction page and upload a document first."
+        )
         return response, response
-    
+
     visible_response = "Here is the relation graph for your document."
-    
+
     # Give the GPT model the original document
-    hidden_response_entities = "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. " \
-        "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. " \
-        "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. " \
-        "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n" \
-        + st.session_state['ner_text_tagged'] \
+    hidden_response_entities = (
+        "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. "
+        "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. "
+        "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. "
+        "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n"
+        + st.session_state["ner_text_tagged"]
         + "\n<hidden_message_end>\n"
-    
-    if 'prev_relation_graph' in st.session_state and st.session_state['prev_relation_graph'] is not None:
-        previous_graph = json.dumps(st.session_state['prev_relation_graph'], indent=4)
+    )
+
+    if (
+        "prev_relation_graph" in st.session_state
+        and st.session_state["prev_relation_graph"] is not None
+    ):
+        previous_graph = json.dumps(st.session_state["prev_relation_graph"], indent=4)
     else:
         previous_graph = ""
-    
-    graph_svg, relation_json = api_client.build_up_relation_graph(st.session_state['ner_text_tagged'], previous_graph) 
+
+    graph_svg, relation_json = api_client.build_up_relation_graph(
+        st.session_state["ner_text_tagged"], previous_graph
+    )
 
     # Give the GPT model the relations that it has extracted from the document in the chat log
-    hidden_response = hidden_response_entities + "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n" \
-        + json.dumps(relation_json) \
+    hidden_response = (
+        hidden_response_entities
+        + "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n"
+        + json.dumps(relation_json)
         + "\n</hidden_message_end>\n"
-    
+    )
+
     # End the message with the model presenting the generated graph to the user
-    hidden_response += visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
+    hidden_response += (
+        visible_response
+        + '\n![graph of entity relations](relation_graph.png "Relationship Graph")'
+    )
 
     if interactive:
         # Add the json to the visible_messages so that it can be rendered on reload
         visible_response += "\n" + json.dumps(relation_json)
     else:
         # Add an overflow scroll bar for the graph
-        html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
+        html = (
+            f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
+        )
         visible_response += html
-    
+
     # If the current graph is the same length as the previous graph assume finished
     if previous_graph != "" and len(relation_json) <= len(json.loads(previous_graph)):
         stop_graph_generation()
     else:
         #  Else cache current partial graph and continue next call
         existing_relations = extract_relation_json_from_text(hidden_response)
-        st.session_state['prev_relation_graph'] = existing_relations
+        st.session_state["prev_relation_graph"] = existing_relations
 
     return visible_response, hidden_response
 
 
 def stop_graph_generation():
-    st.session_state['prev_relation_graph'] = None
-    
-    
+    st.session_state["prev_relation_graph"] = None
+
+
 def reset_conversation():
-    st.session_state['messages_visible'] = [
+    st.session_state["messages_visible"] = [
         {
             "role": "assistant",
             "content": "Let's start a new conversation. What would you like to ask me?",
         }
     ]
-    
-    st.session_state['messages_hidden'] = [
-    ]
-    
+
+    st.session_state["messages_hidden"] = []
+
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
-    st.session_state['prev_relation_graph'] = None
+    st.session_state["prev_relation_graph"] = None
 
 
 def add_message_to_both_states(role, message):
     add_visible_message_to_state(role, message)
     add_hidden_message_to_state(role, message)
- 
- 
+
+
 def add_visible_message_to_state(role, message):
     st.session_state.messages_visible.append({"role": role, "content": message})
-    
-    
+
+
 def add_hidden_message_to_state(role, message):
     st.session_state.messages_hidden.append({"role": role, "content": message})
 
 
 def pop_last_message():
-    return st.session_state.messages_visible.pop(), st.session_state.messages_hidden.pop()
+    return (
+        st.session_state.messages_visible.pop(),
+        st.session_state.messages_hidden.pop(),
+    )
 
 
-SCOTI_FUNCTIONS = {
-    "Show me the relation graph for this document": get_relation_graph
-}
+SCOTI_FUNCTIONS = {"Show me the relation graph for this document": get_relation_graph}
 
 
 def get_prompt_fuzzy_matched(
@@ -228,6 +268,7 @@ def get_prompt_fuzzy_matched(
             return choice
 
     return input_prompt
+
 
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
@@ -250,7 +291,10 @@ api_client = APIClient(Config.NLP_CONNECTION_STRING)
 runpod_client = RunpodClient()
 
 # Initialize chat history
-if "messages_visible" not in st.session_state or "messages_hidden" not in st.session_state:
+if (
+    "messages_visible" not in st.session_state
+    or "messages_hidden" not in st.session_state
+):
     reset_conversation()
 
 # Display chat history on page re-render
@@ -271,13 +315,17 @@ for i, message in enumerate(st.session_state.messages_visible):
         else:
             # Assume this is just a text response
             st.markdown(message["content"], unsafe_allow_html=True)
-        
+
         # If last message and we have not finished rendering the graph then continue rendering, reloading the chat as we get new updates to the graph
-        if i+1 == len(st.session_state.messages_visible) and 'prev_relation_graph' in st.session_state and st.session_state['prev_relation_graph'] is not None:
-            st.button("Pause", on_click=stop_graph_generation)            
+        if (
+            i + 1 == len(st.session_state.messages_visible)
+            and "prev_relation_graph" in st.session_state
+            and st.session_state["prev_relation_graph"] is not None
+        ):
+            st.button("Pause", on_click=stop_graph_generation)
             with st.spinner():
                 bot_visible_response, bot_hidden_response = get_relation_graph()
-                
+
             pop_last_message()
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
