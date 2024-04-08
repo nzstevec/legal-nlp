@@ -18,8 +18,8 @@ Your task is to extract ALL the relations between ALL the tagged entities in the
 
 The JSON should include the following fields:
  - `relation`: The relation between the entities, named in all caps and in simple directional format (e.g., CONTRACTED_WITH).
- - `entity1`: An object representing the first entity label in the relation and its type.
- - `entity2`: An object representing the second entity label in the relation and its type.
+ - `entity1`: An object representing the first entity in the relation with an abbreviated label and its type.
+ - `entity2`: An object representing the second entity in the relation with an abbreviated label and its type.
  - `additional_info`: Additional information about the relation, including a description.
  
 **Relation labelling:** Relations should be named in all caps and in simple directional format.
@@ -29,9 +29,9 @@ The JSON should include the following fields:
 **Entities labelling**: Entities should be proper nouns.
  - **Allowed entity types:** JUDGE, COURT, GPE, RESPONDENT, DATE, WITNESS, PRECEDENT, CASE_NUMBER, LAWYER, PROVISION, STATUTE, PETITIONER, ORG, PERSON, OTHER
  - When extracting entities, it's vital to ensure consistency.
- - DO NOT make entity labels longer than 4 words.
+ - DO NOT make entity labels longer than 4 words unless it is either a statue, provision or a precedent. In which case you should quote the entity name as is given in the text.
  - Entities should be short proper nouns.
- - Include statues, provisions, and references to precedent cases as entities.
+ - Statues, provisions, and references to precedent cases are entities.
  
 **Consistency:** When extracting entities, it's vital to ensure consistency.
  - If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity throughout the relation graph. In this example, use "John Doe" as the entity name. Remember, the relation graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial. 
