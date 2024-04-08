@@ -48,7 +48,15 @@ The JSON should include the following fields:
     "additional_info": {
       "description": "The appellant ('Carmichael', the shipper) contracted with the second respondent (OneSteel) for the manufacture and supply of head-hardened steel rails."
     }
-  }
+  },
+  {
+    "relation": "REFERS_TO_PROVISION",
+    "entity1": { "entity": "statement of issues", "type": "OTHER" },
+    "entity2": { "entity": "<PROVISION>s 5B</PROVISION>", "type": "PROVISION" },
+    "additional_info": {
+        "description": "The statement of issues refers to specific provisions (s 5B) of the Civil Liability Act." 
+        } 
+    }
 ]
 ```
 ### Response Format
@@ -59,12 +67,12 @@ ONLY RESPOND IN JSON!
 EXAMPLES_PROMPT = """### Existing Entity Relations in Court Case
 {existing_relations}
 
- - If any entities in the new text are related to the above entities make sure to specify that relation
+ - Wherever possible try to relate any new entities to the entity relations above!
 
 """
 
 GENERATION_PROMPT = """### Text for Entity Relation Extraction
-Here is the text from which to extract the entity relations:
+Here is the text from which to extract the entity relations, wherever possible try to relate any new entities to the existing entity relations.
 
 {text}"""
 
