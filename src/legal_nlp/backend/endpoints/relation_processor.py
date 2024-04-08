@@ -7,7 +7,7 @@ import html
 
 RELATION_GRAPH_PROMPT = """## Legal Relation Extraction Instructions
 
-You are an expert entity relation extractor for legal documents.
+You are an expert entity relation extractor for legal documents in court cases.
 
 ### Task Description
 
@@ -54,8 +54,19 @@ The JSON should include the following fields:
 ### Response Format
 ONLY RESPOND IN JSON!
 
-### Text for Entity Relation Extraction
-Here is the text from which to extract the entity relations:\n"""
+"""
+
+EXAMPLES_PROMPT = """### Existing Entity Relations in Court Case
+{existing_relations}
+
+ - If any entities in the new text are related to the above entities make sure to specify that relation
+
+"""
+
+GENERATION_PROMPT = """### Text for Entity Relation Extraction
+Here is the text from which to extract the entity relations:
+
+{text}"""
 
 
 class RelationProcessor:
@@ -95,54 +106,33 @@ class RelationProcessor:
         return dot
 
     def build_up_relation_graph(
-        self, text: str, existing_relations: str, max_new_tokens: int, force_continue: bool
+        self, text: str, existing_relations: str, max_new_tokens: int
     ):
         """
         This funciton is meant for iteratively building up the relation graph incrementally rather than all at once. Will return {"graph_svg": None, "relation_json": None} when finished
         """
         relation_graph_dict = self.get_relation_graph(
-            text, existing_relations, max_new_tokens, force_continue
+            text, existing_relations, max_new_tokens
         )
         return relation_graph_dict
 
-    def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048, force_continue: bool = False):
+    def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048):
         generate_relations_json_prompt = RELATION_GRAPH_PROMPT
+        generate_relations_json_prompt += EXAMPLES_PROMPT.format(existing_relations=existing_relations)
+        generate_relations_json_prompt += GENERATION_PROMPT.format(text=text)
         
-        generate_relations_json_prompt += text
-
         messages = [{"role": "user", "content": generate_relations_json_prompt}]
 
         chat_prompt = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-
-        # If we have an exisint relation dict that we're extending start off the assistant response with it
-        existing_relations_prompt = ""
-        existing_relations = json.loads(existing_relations)
-
-        indented_relations_dict = json.dumps(
-            existing_relations, indent=4
-        )
         
-        # Strip back the closing bracket on relation list so it can be continued
-        last_bracket_index = indented_relations_dict.rfind("]")
-        if last_bracket_index == -1:
-            existing_relations_prompt = indented_relations_dict
-        else:
-            existing_relations_prompt = indented_relations_dict[:last_bracket_index]
-            
-        # Add comma in list to force gpt model to generate new relations
-        if force_continue and len(existing_relations) > 0:
-            existing_relations_prompt += ","
-            
-        chat_prompt += " " + existing_relations_prompt
+        chat_prompt += " ["
         
         gpt_response = self.gpt_client.get_gpt_response({}, generation_args={"max_tokens": max_new_tokens, "seed": self.seed}, prompt=chat_prompt)
 
-        # Assume that scoti will return the entities wrapped in square brackets
-        relations_json = self.extract_json_from_text(
-            existing_relations_prompt + gpt_response
-        )
+        relations_json = self.extract_json_from_text(existing_relations + "\n" + gpt_response)
+        
         dot_graph = self.json_to_dot(relations_json)
 
         dot_graph = dot_graph.replace("}", 'rankdir="LR";}')

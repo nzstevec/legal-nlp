@@ -32,13 +32,12 @@ class APIClient:
 
         return graph_svg, relation_json
 
-    def build_up_relation_graph(self, text, existing_relations, force_continue=False):
+    def build_up_relation_graph(self, text, existing_relations):
         endpoint = f"{self.base_url}/extend_entity_relations"
         data = {
             "text": str(text),
             "existing_relations": str(existing_relations),
-            "max_new_tokens": 2048,
-            "force_continue": force_continue
+            "max_new_tokens": 2048
         }
         response = requests.post(endpoint, json=data)
         response.raise_for_status()

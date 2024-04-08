@@ -48,7 +48,6 @@ def get_relation_graph(api_client, interactive=True):
             'chunks': chunk_text(st.session_state['ner_text_tagged']),
             'chunk_iters': 0
         }
-        st.session_state['graph_building_cache'] = graph_building_cache
     
     # Give the GPT model the original document
     hidden_response_entities = "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. " \
@@ -58,9 +57,7 @@ def get_relation_graph(api_client, interactive=True):
         + st.session_state['ner_text_tagged'] \
         + "\n<hidden_message_end>\n"
     
-    # If we are working on a new chunk force the gpt model to generate a relation
-    force_generate = graph_building_cache['chunk_iters'] == 0
-    graph_svg, relation_json = api_client.build_up_relation_graph(graph_building_cache['chunks'][0], graph_building_cache['current_relation_graph'], force_continue=force_generate) 
+    graph_svg, relation_json = api_client.build_up_relation_graph(graph_building_cache['chunks'][0], graph_building_cache['current_relation_graph']) 
 
     # Give the GPT model the relations that it has extracted from the document in the chat log
     hidden_response = hidden_response_entities + "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n" \
@@ -71,28 +68,22 @@ def get_relation_graph(api_client, interactive=True):
     hidden_response += visible_response + "\n![graph of entity relations](relation_graph.png \"Relationship Graph\")"
 
     if interactive:
-        # Add the json to the visible_messages so that it can be rendered on reload
+        # Add the relation json to the visible_messages
         visible_response += "\n" + json.dumps(relation_json, indent=4)
     else:
-        # Add an overflow scroll bar for the graph
+        # Add the generated html graph to visible_messages
         html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
         visible_response += html
     
-    # Keep track of how many iterations we have done on current chunk as stopping criteria
-    graph_building_cache['chunk_iters'] += 1
-    
-    # If the current graph is the same length as the previous graph assume all relations for current chunk have been extracted
-    current_graph = json.loads(graph_building_cache['current_relation_graph'])
-    if (len(current_graph) != 0 and len(relation_json) <= len(current_graph)) or graph_building_cache['chunk_iters'] >= MAX_ITERS_PER_CHUNK:
-        if len(graph_building_cache['chunks']) > 1:
-            graph_building_cache['chunks'] = graph_building_cache['chunks'][1:]
-            graph_building_cache['chunk_iters'] = 0
-        else:
-            # Since all chunks have been processed assume finished and clear cache
-            del st.session_state['graph_building_cache']
-    else:
-        #  Else cache current partial graph and continue next call
+    if len(graph_building_cache['chunks']) > 1:
+        graph_building_cache['chunks'] = graph_building_cache['chunks'][1:]
+        # Cache current partial graph and continue next call
         graph_building_cache['current_relation_graph'] = json.dumps(relation_json, indent=4)
+    else:
+        # Since all chunks have been processed assume finished and clear cache
+        del st.session_state['graph_building_cache']
+
+    st.session_state['graph_building_cache'] = graph_building_cache
 
     return visible_response, hidden_response
 
@@ -149,6 +140,10 @@ def draw_relation_graph(relation_json):
             relation_duplicates[(entity1, entity2)] += 1
         else:
             relation_duplicates[(entity1, entity2)] = 1
+            
+            # Increment the degrees of the nodes involved in this edge on non-duplicate relations
+            node_degrees[entity1] += 1
+            node_degrees[entity2] += 1
         
         edges.append( agraph.Edge(source=entity1, 
                         label=relation, 
@@ -158,12 +153,8 @@ def draw_relation_graph(relation_json):
                         length=300,
                         ) 
                     )
-        
-        # Increment the degrees of the nodes involved in this edge
-        node_degrees[entity1] += 1
-        node_degrees[entity2] += 1
 
-    # Set node sizes and edge lengths based on degrees of nodes
+    # Set node sizes based on degrees of nodes
     for node in nodes:
         node_id = node.id
         if node_id in node_degrees:
@@ -175,8 +166,8 @@ def draw_relation_graph(relation_json):
         target = edge.to
         if source in node_degrees and target in node_degrees:
             # If both source and target are high-degree nodes, increase edge length
-            if node_degrees[source] > 3 and node_degrees[target] > 3:
-                edge.length = 900  # Adjust edge length for high-degree nodes
+            if node_degrees[source] > 4 and node_degrees[target] > 4:
+                edge.length = 700  # Adjust edge length for high-degree nodes
 
     config = agraph.Config(width=1300,
                 height=600,
