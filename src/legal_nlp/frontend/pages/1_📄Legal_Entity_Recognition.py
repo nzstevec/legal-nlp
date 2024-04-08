@@ -6,6 +6,7 @@ from streamlit_extras.app_logo import add_logo
 from streamlit_extras.switch_page_button import switch_page
 import streamlit_shadcn_ui as ui
 
+from utils.text_extraction import load_file_contents
 from clients.nlp_api_client import APIClient
 from config import Config, PageConfig
 
@@ -40,12 +41,12 @@ SUMMARY
 )
 
 # Initialize state
-if 'ner_input' not in st.session_state:
-    st.session_state['ner_input'] = DEFAULT_TEXT
-if 'ner_highlight' not in st.session_state:
-    st.session_state['ner_highlight'] = ""
-if 'ner_text_tagged' not in st.session_state: 
-    st.session_state['ner_text_tagged'] = ""
+if "ner_input" not in st.session_state:
+    st.session_state["ner_input"] = DEFAULT_TEXT
+if "ner_highlight" not in st.session_state:
+    st.session_state["ner_highlight"] = ""
+if "ner_text_tagged" not in st.session_state:
+    st.session_state["ner_text_tagged"] = ""
 
 
 def saturate_lighten_color(hex_color, percentage):
@@ -93,11 +94,11 @@ def add_plaintext_tags(text, ner_tags):
         start_index = text.find(entity, current_index)
         end_index = start_index + len(entity)
         tagged_text += text[current_index:start_index]
-        tagged_text += f'<{label}>{entity}</{label}>'
+        tagged_text += f"<{label}>{entity}</{label}>"
         current_index = end_index
     tagged_text += text[current_index:]
     return tagged_text
-    
+
 
 def label_text_entities(text_input):
     # Call the API client to process the text
@@ -157,9 +158,26 @@ st.title("Legal Entity Recognition")
 # Initialize the API client with the backend URL
 api_client = APIClient(Config.NLP_CONNECTION_STRING)
 
+# Can accept multiple files currently
+uploaded_files = st.file_uploader(
+    label="File Uploader",
+    label_visibility="hidden",
+    accept_multiple_files=True,
+    type=[".docx", ".pdf", ".txt", ".rtf"],
+)
+
+# This needs to be before where the text_area input box is defined
+if uploaded_files:
+    st.session_state.ner_input = load_file_contents(uploaded_files)
+
+
 col1, col2 = st.columns((0.7, 0.3), gap="medium")
 with col1:
-    text_input = st.text_area("Enter text here:", value=st.session_state['ner_input'], height=250)
+    text_input = st.text_area(
+        "Enter text here:",
+        value=st.session_state["ner_input"],
+        height=250,
+    )
 with col2:
     # Show table of entity labels
     ner_labels = split_list_into_df(api_client.get_ner_labels(), 3)
@@ -178,10 +196,10 @@ with col1_1:
     if st.button("Process"):
         try:
             with st.spinner("Extracting Legal Entities..."):
-                st.session_state['ner_input'] = text_input
+                st.session_state["ner_input"] = text_input
                 highlight_html, ner_text_tagged = label_text_entities(text_input)
-                st.session_state['ner_highlight'] = highlight_html
-                st.session_state['ner_text_tagged'] = ner_text_tagged
+                st.session_state["ner_highlight"] = highlight_html
+                st.session_state["ner_text_tagged"] = ner_text_tagged
         except Exception as e:
             st.error(f"Error processing text: {e}")
 with col1_2:
@@ -189,8 +207,12 @@ with col1_2:
         switch_page("chat with scoti")
 
 # Render text with ner label highlights
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
+st.markdown(st.session_state["ner_highlight"], unsafe_allow_html=True)
+=======
 print(st.session_state['ner_highlight'].replace('\n', '\n\n'))
 
 # Double up new lines to render in markdown, replace 2 space indents with html space tag
 display_text = st.session_state['ner_highlight'].replace('\n', '\n\n').replace('  ','&nbsp;&nbsp;')
 st.markdown(display_text, unsafe_allow_html=True)
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b

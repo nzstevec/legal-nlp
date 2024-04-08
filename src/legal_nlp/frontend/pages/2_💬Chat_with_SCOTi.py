@@ -26,23 +26,22 @@ SCOTI_WAITING_GIF = "frontend/static/gifs/SCOTi_05_Laying-down_V2.gif"
 if "current_gif" not in st.session_state:
     # Scoti wagging tail is default
     st.session_state["current_gif"] = SCOTI_HAPPY_GIF
-    
+
 
 def stop_graph_generation():
-    st.session_state['prev_relation_graph'] = None
-    
-    
+    st.session_state["prev_relation_graph"] = None
+
+
 def reset_conversation():
-    st.session_state['messages_visible'] = [
+    st.session_state["messages_visible"] = [
         {
             "role": "assistant",
             "content": "Let's start a new conversation. What would you like to ask me?",
         }
     ]
-    
-    st.session_state['messages_hidden'] = [
-    ]
-    
+
+    st.session_state["messages_hidden"] = []
+
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
     stop_graph_generation()
     
@@ -50,23 +49,24 @@ def reset_conversation():
 def add_message_to_both_states(role, message):
     add_visible_message_to_state(role, message)
     add_hidden_message_to_state(role, message)
- 
- 
+
+
 def add_visible_message_to_state(role, message):
     st.session_state.messages_visible.append({"role": role, "content": message})
-    
-    
+
+
 def add_hidden_message_to_state(role, message):
     st.session_state.messages_hidden.append({"role": role, "content": message})
 
 
 def pop_last_message():
-    return st.session_state.messages_visible.pop(), st.session_state.messages_hidden.pop()
+    return (
+        st.session_state.messages_visible.pop(),
+        st.session_state.messages_hidden.pop(),
+    )
 
 
-SCOTI_FUNCTIONS = {
-    "Show me the relation graph for this document": get_relation_graph
-}
+SCOTI_FUNCTIONS = {"Show me the relation graph for this document": get_relation_graph}
 
 
 def get_prompt_fuzzy_matched(
@@ -86,6 +86,7 @@ def get_prompt_fuzzy_matched(
             return choice
 
     return input_prompt
+
 
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
@@ -108,7 +109,10 @@ api_client = APIClient(Config.NLP_CONNECTION_STRING)
 runpod_client = RunpodClient()
 
 # Initialize chat history
-if "messages_visible" not in st.session_state or "messages_hidden" not in st.session_state:
+if (
+    "messages_visible" not in st.session_state
+    or "messages_hidden" not in st.session_state
+):
     reset_conversation()
 
 # Display chat history on page re-render
@@ -129,7 +133,7 @@ for i, message in enumerate(st.session_state.messages_visible):
         else:
             # Assume this is just a text response
             st.markdown(message["content"], unsafe_allow_html=True)
-        
+
         # If last message and we have not finished rendering the graph then continue rendering, reloading the chat as we get new updates to the graph
         if i+1 == len(st.session_state.messages_visible) and st.session_state.get('prev_relation_graph') is not None:
             st.button("Pause", on_click=stop_graph_generation)            
