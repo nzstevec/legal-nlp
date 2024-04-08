@@ -48,6 +48,16 @@ def draw_relation_graph(relation_json):
     nodes = []
     edges = []
     node_ids = []
+    color_mapping = {
+        "PERSON": "#DBEBC2", 
+        "RESPONDENT": "#DBEBC2", 
+        "WITNESS": "#DBEBC2", 
+        "JUDGE": "#DBEBC2", 
+        "LAWYER": "#DBEBC2", 
+        "PETITIONER": "#DBEBC2", 
+        "ORG": "#F7A7A6", 
+        "COURT": "#F7A7A6"
+        }
     
     for item in relation_json:
         entity1 = strip_angle_brackets(item["entity1"]["entity"])
@@ -58,8 +68,9 @@ def draw_relation_graph(relation_json):
         if entity1 not in node_ids:
             nodes.append( agraph.Node(id=entity1, 
                             label=entity1, 
-                            size=5, 
-                            shape="dot"
+                            size=7, 
+                            shape="dot",
+                            color=color_mapping.get(item["entity1"]["type"].upper())
                             ) 
                         )
             node_ids.append(entity1)
@@ -67,8 +78,9 @@ def draw_relation_graph(relation_json):
         if entity2 not in node_ids:
             nodes.append( agraph.Node(id=entity2, 
                             label=entity2, 
-                            size=5,
-                            shape="dot"
+                            size=7,
+                            shape="dot",
+                            color=color_mapping.get(item["entity2"]["type"].upper())
                             ) 
                         )
             node_ids.append(entity2)
@@ -77,7 +89,21 @@ def draw_relation_graph(relation_json):
                         label=relation, 
                         target=entity2,
                         dashes=False,
-                        title=description
+                        title=description,
+                        length=200,
+                        # physics = {"enabled": True,
+                        #     "barnesHut": {
+                        #         "gravitationalConstant": -2000,
+                        #         "centralGravity": 0.3,
+                        #         "springLength": 100,
+                        #         "springConstant": 0.04,
+                        #         "damping": 0.09,
+                        #         "avoidOverlap": 1
+                        #     },
+                        #     "stabilization": {
+                        #         "iterations": 1000
+                        #     }
+                        # }
                         ) 
                     ) 
 
@@ -256,6 +282,8 @@ for i, message in enumerate(st.session_state.messages_visible):
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
             st.rerun()
+
+st.session_state["current_gif"] = SCOTI_WAITING_GIF
 
 # Accept user input
 if prompt := st.chat_input("Enter message here..."):
