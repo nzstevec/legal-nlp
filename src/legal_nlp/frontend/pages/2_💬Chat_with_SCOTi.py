@@ -48,7 +48,21 @@ def draw_relation_graph(relation_json):
     nodes = []
     edges = []
     node_ids = []
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
 
+=======
+    color_mapping = {
+        "PERSON": "#DBEBC2", 
+        "RESPONDENT": "#DBEBC2", 
+        "WITNESS": "#DBEBC2", 
+        "JUDGE": "#DBEBC2", 
+        "LAWYER": "#DBEBC2", 
+        "PETITIONER": "#DBEBC2", 
+        "ORG": "#F7A7A6", 
+        "COURT": "#F7A7A6"
+        }
+    
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b
     for item in relation_json:
         entity1 = strip_angle_brackets(item["entity1"]["entity"])
         entity2 = strip_angle_brackets(item["entity2"]["entity"])
@@ -56,12 +70,55 @@ def draw_relation_graph(relation_json):
         description = item["additional_info"]["description"]
 
         if entity1 not in node_ids:
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
             nodes.append(agraph.Node(id=entity1, label=entity1, size=5, shape="dot"))
+=======
+            nodes.append( agraph.Node(id=entity1, 
+                            label=entity1, 
+                            size=7, 
+                            shape="dot",
+                            color=color_mapping.get(item["entity1"]["type"].upper())
+                            ) 
+                        )
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b
             node_ids.append(entity1)
 
         if entity2 not in node_ids:
+<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
             nodes.append(agraph.Node(id=entity2, label=entity2, size=5, shape="dot"))
             node_ids.append(entity2)
+=======
+            nodes.append( agraph.Node(id=entity2, 
+                            label=entity2, 
+                            size=7,
+                            shape="dot",
+                            color=color_mapping.get(item["entity2"]["type"].upper())
+                            ) 
+                        )
+            node_ids.append(entity2)
+            
+        edges.append( agraph.Edge(source=entity1, 
+                        label=relation, 
+                        target=entity2,
+                        dashes=False,
+                        title=description,
+                        length=200,
+                        # physics = {"enabled": True,
+                        #     "barnesHut": {
+                        #         "gravitationalConstant": -2000,
+                        #         "centralGravity": 0.3,
+                        #         "springLength": 100,
+                        #         "springConstant": 0.04,
+                        #         "damping": 0.09,
+                        #         "avoidOverlap": 1
+                        #     },
+                        #     "stabilization": {
+                        #         "iterations": 1000
+                        #     }
+                        # }
+                        ) 
+                    ) 
+>>>>>>> 29377974961ae779a6512301224f05527dafc73b
 
         edges.append(
             agraph.Edge(
@@ -273,6 +330,8 @@ for i, message in enumerate(st.session_state.messages_visible):
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
             st.rerun()
+
+st.session_state["current_gif"] = SCOTI_WAITING_GIF
 
 # Accept user input
 if prompt := st.chat_input("Enter message here..."):
