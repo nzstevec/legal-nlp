@@ -29,7 +29,8 @@ if "current_gif" not in st.session_state:
 
 
 def stop_graph_generation():
-    st.session_state["prev_relation_graph"] = None
+    if "graph_building_cache" in st.session_state:
+        del st.session_state["graph_building_cache"]
 
 
 def reset_conversation():
@@ -135,7 +136,7 @@ for i, message in enumerate(st.session_state.messages_visible):
             st.markdown(message["content"], unsafe_allow_html=True)
 
         # If last message and we have not finished rendering the graph then continue rendering, reloading the chat as we get new updates to the graph
-        if i+1 == len(st.session_state.messages_visible) and st.session_state.get('prev_relation_graph') is not None:
+        if i+1 == len(st.session_state.messages_visible) and st.session_state.get('graph_building_cache') is not None:
             st.button("Pause", on_click=stop_graph_generation)            
             with st.spinner():
                 bot_visible_response, bot_hidden_response = get_relation_graph(api_client)

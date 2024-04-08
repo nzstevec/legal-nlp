@@ -3,9 +3,12 @@ import re
 import streamlit_agraph as agraph
 import streamlit as st
 
+MAX_ITERS_PER_CHUNK = 5
+
 def strip_angle_brackets(entity):
     parts = entity.split('>')
     return parts[-1] if len(parts) == 1 else parts[1].split('<')[0]
+
 
 def extract_relation_json_from_text(text):
     # Define a regular expression pattern to match each dictionary
@@ -15,12 +18,37 @@ def extract_relation_json_from_text(text):
     matches = re.findall(pattern, text, re.DOTALL)
     return json.loads(f'[{",".join(matches)}]')
 
+
+def chunk_text(text, min_chunk_size=900):
+    chunked_text = text.split(".")
+    chunks = []
+    
+    i = 0
+    while i < len(chunked_text):
+        chunk = ""
+        while len(chunk) < min_chunk_size and i < len(chunked_text):
+            chunk += chunked_text[i] + "."
+            i += 1
+        chunks.append(chunk)
+    
+    return chunks
+
+
 def get_relation_graph(api_client, interactive=True):
     if 'ner_text_tagged' not in st.session_state:
         response = "Please return to the entity extraction page and upload a document first."
         return response, response
     
     visible_response = "Here is the relation graph for your document."
+    
+    graph_building_cache = st.session_state.get('graph_building_cache')
+    if graph_building_cache is None:
+        graph_building_cache = {
+            'current_relation_graph': "[]",
+            'chunks': chunk_text(st.session_state['ner_text_tagged']),
+            'chunk_iters': 0
+        }
+        st.session_state['graph_building_cache'] = graph_building_cache
     
     # Give the GPT model the original document
     hidden_response_entities = "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. " \
@@ -30,16 +58,13 @@ def get_relation_graph(api_client, interactive=True):
         + st.session_state['ner_text_tagged'] \
         + "\n<hidden_message_end>\n"
     
-    if st.session_state.get('prev_relation_graph') is not None:
-        previous_graph = json.dumps(st.session_state['prev_relation_graph'], indent=4)
-    else:
-        previous_graph = ""
-    
-    graph_svg, relation_json = api_client.build_up_relation_graph(st.session_state['ner_text_tagged'], previous_graph) 
+    # If we are working on a new chunk force the gpt model to generate a relation
+    force_generate = graph_building_cache['chunk_iters'] == 0
+    graph_svg, relation_json = api_client.build_up_relation_graph(graph_building_cache['chunks'][0], graph_building_cache['current_relation_graph'], force_continue=force_generate) 
 
     # Give the GPT model the relations that it has extracted from the document in the chat log
     hidden_response = hidden_response_entities + "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n" \
-        + json.dumps(relation_json) \
+        + json.dumps(relation_json, indent=4) \
         + "\n</hidden_message_end>\n"
     
     # End the message with the model presenting the generated graph to the user
@@ -47,21 +72,30 @@ def get_relation_graph(api_client, interactive=True):
 
     if interactive:
         # Add the json to the visible_messages so that it can be rendered on reload
-        visible_response += "\n" + json.dumps(relation_json)
+        visible_response += "\n" + json.dumps(relation_json, indent=4)
     else:
         # Add an overflow scroll bar for the graph
         html = f"""\n<div style="max-width: 100%; overflow-x: auto;">{graph_svg}</div>"""
         visible_response += html
     
-    # If the current graph is the same length as the previous graph assume finished
-    if previous_graph != "" and len(relation_json) <= len(json.loads(previous_graph)):
-        st.session_state['prev_relation_graph'] = None
+    # Keep track of how many iterations we have done on current chunk as stopping criteria
+    graph_building_cache['chunk_iters'] += 1
+    
+    # If the current graph is the same length as the previous graph assume all relations for current chunk have been extracted
+    current_graph = json.loads(graph_building_cache['current_relation_graph'])
+    if (len(current_graph) != 0 and len(relation_json) <= len(current_graph)) or graph_building_cache['chunk_iters'] >= MAX_ITERS_PER_CHUNK:
+        if len(graph_building_cache['chunks']) > 1:
+            graph_building_cache['chunks'] = graph_building_cache['chunks'][1:]
+            graph_building_cache['chunk_iters'] = 0
+        else:
+            # Since all chunks have been processed assume finished and clear cache
+            del st.session_state['graph_building_cache']
     else:
         #  Else cache current partial graph and continue next call
-        existing_relations = extract_relation_json_from_text(hidden_response)
-        st.session_state['prev_relation_graph'] = existing_relations
+        graph_building_cache['current_relation_graph'] = json.dumps(relation_json, indent=4)
 
     return visible_response, hidden_response
+
 
 def draw_relation_graph(relation_json):
     nodes = []

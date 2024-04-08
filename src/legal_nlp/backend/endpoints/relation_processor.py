@@ -95,17 +95,17 @@ class RelationProcessor:
         return dot
 
     def build_up_relation_graph(
-        self, text: str, existing_relations: str, max_new_tokens: int
+        self, text: str, existing_relations: str, max_new_tokens: int, force_continue: bool
     ):
         """
         This funciton is meant for iteratively building up the relation graph incrementally rather than all at once. Will return {"graph_svg": None, "relation_json": None} when finished
         """
         relation_graph_dict = self.get_relation_graph(
-            text, existing_relations, max_new_tokens
+            text, existing_relations, max_new_tokens, force_continue
         )
         return relation_graph_dict
 
-    def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048):
+    def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048, force_continue: bool = False):
         generate_relations_json_prompt = RELATION_GRAPH_PROMPT
         
         generate_relations_json_prompt += text
@@ -118,18 +118,27 @@ class RelationProcessor:
 
         # If we have an exisint relation dict that we're extending start off the assistant response with it
         existing_relations_prompt = ""
-        if len(existing_relations) > 0:
-            indented_relations_dict = json.dumps(
-                json.loads(existing_relations), indent=4
-            )
-            # Remove closing bracket and add comma to prompt model to continue
-            existing_relations_prompt = (
-                indented_relations_dict.split("]")[0].strip() + ","
-            )
-            chat_prompt += " " + existing_relations_prompt
+        existing_relations = json.loads(existing_relations)
 
-        gpt_response = self.gpt_client.get_gpt_response({}, generation_args={"max_tokens": max_new_tokens, "seed": self.seed}, prompt=chat_prompt)
+        indented_relations_dict = json.dumps(
+            existing_relations, indent=4
+        )
         
+        # Strip back the closing bracket on relation list so it can be continued
+        last_bracket_index = indented_relations_dict.rfind("]")
+        if last_bracket_index == -1:
+            existing_relations_prompt = indented_relations_dict
+        else:
+            existing_relations_prompt = indented_relations_dict[:last_bracket_index]
+            
+        # Add comma in list to force gpt model to generate new relations
+        if force_continue and len(existing_relations) > 0:
+            existing_relations_prompt += ","
+            
+        chat_prompt += " " + existing_relations_prompt
+        
+        gpt_response = self.gpt_client.get_gpt_response({}, generation_args={"max_tokens": max_new_tokens, "seed": self.seed}, prompt=chat_prompt)
+
         # Assume that scoti will return the entities wrapped in square brackets
         relations_json = self.extract_json_from_text(
             existing_relations_prompt + gpt_response

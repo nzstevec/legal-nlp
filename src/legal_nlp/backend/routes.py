@@ -19,12 +19,12 @@ async def get_ner_labels():
 @router.post("/get_entity_relations/")
 async def get_ner_labels(request: RelationRequest):
     return relation_processor.get_relation_graph(
-        request.text, request.existing_relations, request.max_new_tokens
+        request.text, request.existing_relations, request.max_new_tokens, request.force_continue
     )
 
 
 @router.post("/extend_entity_relations/")
 async def get_ner_labels(request: RelationRequest):
     return relation_processor.build_up_relation_graph(
-        request.text, request.existing_relations, request.max_new_tokens
+        request.text, request.existing_relations, request.max_new_tokens, request.force_continue
     )
