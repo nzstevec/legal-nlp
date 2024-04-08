@@ -61,14 +61,8 @@ Here is the text from which to extract the entity relations:\n"""
 class RelationProcessor:
     def __init__(self):
         self.gpt_client = RunpodClient()
-<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "mistralai/Mixtral-8x7B-Instruct-v0.1"
-        )
-=======
         self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mixtral-8x7B-Instruct-v0.1")
         self.seed = 21
->>>>>>> 29377974961ae779a6512301224f05527dafc73b
 
     def extract_json_from_text(self, text):
         # Define a regular expression pattern to match each dictionary
@@ -97,12 +91,7 @@ class RelationProcessor:
             dot += f'"{entity1}" -> "{entity2}" [label="{relation}" tooltip="{description}" labeltooltip="{description}"];\n'
 
         dot += "}"
-<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
-
-        print(dot)
-=======
         
->>>>>>> 29377974961ae779a6512301224f05527dafc73b
         return dot
 
     def build_up_relation_graph(
@@ -116,40 +105,9 @@ class RelationProcessor:
         )
         return relation_graph_dict
 
-<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
-    def get_relation_graph(
-        self, text: str, existing_relations: str = "", max_new_tokens: int = 2048
-    ):
-
-        # NOTE: I think the key to improving this is to improve the entities extracted. Some of them are low quality, which result in
-        # seriously whacky relationships being defined
-        generate_relations_json_prompt = """You are an expert entity relation extractor for legal documents. 
-You will be given a document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date.
-Please extract ALL the relations between the tagged entities in the text in a json format. The json should include the abbreviated relation, the relevant entity pair, and additional information about the relation.
-Make sure to capture the direction of the relationship as well, for example in the relation Carmichael Contracted_With OneSteel, Carmichael should be entity1 and OneSteel should be entity2.
-The relationships you define will be used to build a knowledge graph to inform key officials. You must be accurate, defining clear and consistent relationships.
-You should only use the entities which are appropriate. An entity should be clear, concise, and non duplicated. The goal is to produce an informative knowledge graph, so not all entities are required.
-
-Here is a sample for the output json schema:
-```json
-[
-  {
-  "relation": "Contracted_With",
-  "entity1": {"entity": "<PETITIONER>Carmichael</PETITIONER>", "type": "Person"},
-  "entity2": {"entity": "<ORG>OneSteel</ORG>", "type": "Organization"},
-  "additional_info": {
-    "description": "The appellant ('Carmichael', the shipper) contracted with the second respondent (OneSteel) for the manufacture and supply of head-hardened steel rails."
-  }
-]
-```
-ONLY RESPOND IN JSON!
-Here is the text from which to extract the entity relations:\n"""
-
-=======
     def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048):
         generate_relations_json_prompt = RELATION_GRAPH_PROMPT
         
->>>>>>> 29377974961ae779a6512301224f05527dafc73b
         generate_relations_json_prompt += text
 
         messages = [{"role": "user", "content": generate_relations_json_prompt}]
@@ -170,15 +128,8 @@ Here is the text from which to extract the entity relations:\n"""
             )
             chat_prompt += " " + existing_relations_prompt
 
-<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
-        gpt_response = self.gpt_client.get_gpt_response(
-            {}, generation_args={"max_tokens": max_new_tokens}, prompt=chat_prompt
-        )
-
-=======
         gpt_response = self.gpt_client.get_gpt_response({}, generation_args={"max_tokens": max_new_tokens, "seed": self.seed}, prompt=chat_prompt)
         
->>>>>>> 29377974961ae779a6512301224f05527dafc73b
         # Assume that scoti will return the entities wrapped in square brackets
         relations_json = self.extract_json_from_text(
             existing_relations_prompt + gpt_response

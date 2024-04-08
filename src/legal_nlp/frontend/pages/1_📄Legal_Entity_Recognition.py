@@ -207,12 +207,6 @@ with col1_2:
         switch_page("chat with scoti")
 
 # Render text with ner label highlights
-<<<<<<< 946e7982f09c6259a1531cd71fa418e2090db0e5
-st.markdown(st.session_state["ner_highlight"], unsafe_allow_html=True)
-=======
-print(st.session_state['ner_highlight'].replace('\n', '\n\n'))
-
 # Double up new lines to render in markdown, replace 2 space indents with html space tag
 display_text = st.session_state['ner_highlight'].replace('\n', '\n\n').replace('  ','&nbsp;&nbsp;')
 st.markdown(display_text, unsafe_allow_html=True)
->>>>>>> 29377974961ae779a6512301224f05527dafc73b
