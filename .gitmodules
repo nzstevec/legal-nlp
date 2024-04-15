@@ -1,0 +1,3 @@
+[submodule "src/legal_nlp/frontend/components/streamlit-agraph"]
+	path = src/legal_nlp/frontend/components/streamlit-agraph
+	url = https://gitlab.com/SmartR_AI/streamlit-components/knowledge-graph.git
