@@ -48,4 +48,4 @@ if uploaded_files:
     st.session_state.inspecting_graph = load_graph(uploaded_files)
 
 if st.session_state.get('inspecting_graph') is not None:
-    draw_relation_graph(st.session_state.inspecting_graph, 4)
+    draw_relation_graph(st.session_state.inspecting_graph, 4, 1600, 1200)

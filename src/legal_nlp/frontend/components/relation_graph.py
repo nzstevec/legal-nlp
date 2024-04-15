@@ -131,7 +131,7 @@ def get_connected_components(nodes, edges):
     return components
 
 
-def draw_relation_graph(relation_json, min_component_len):
+def draw_relation_graph(relation_json, min_component_len, width=1300, height=600):
     nodes = []
     edges = []
     node_ids = []
@@ -224,8 +224,8 @@ def draw_relation_graph(relation_json, min_component_len):
     filtered_edges = [edge for edge in edges if edge.source in filtered_node_ids and edge.to in filtered_node_ids]
     filtered_nodes = [get_node_by_id(nodes, id) for id in filtered_node_ids]
 
-    config = agraph.Config(width=1300,
-                height=600,
+    config = agraph.Config(width=width,
+                height=height,
                 directed=True, 
                 physics=True, 
                 # hierarchical=True,

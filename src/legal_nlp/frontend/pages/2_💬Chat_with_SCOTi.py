@@ -81,7 +81,7 @@ def pop_last_message():
     )
 
 
-SCOTI_FUNCTIONS = {"Show me the relation graph for this document": get_relation_graph}
+SCOTI_FUNCTIONS = {"Hey SCOTi, can you show me the relation graph for this document?": get_relation_graph}
 
 
 def get_prompt_fuzzy_matched(
@@ -193,7 +193,12 @@ if prompt := st.chat_input("Enter message here..."):
                 stream=Config.STREAM_CHAT,
             )
 
-            bot_response = st.write_stream(response_generator)
+            if Config.STREAM_CHAT:
+                bot_response = st.write_stream(response_generator)
+            else:
+                with st.spinner():
+                    bot_response = st.write_stream(response_generator)
+                
             add_message_to_both_states("assistant", bot_response)
 
 
