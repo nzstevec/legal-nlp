@@ -6,8 +6,8 @@ from config import Config
 
 class InferenceClient:
     def __init__(self):
-        self.chat_uri = Config.INFERENCE_CHAT_URI + "api/v1/chat"
-        self.stream_uri = Config.INFERENCE_STREAM_URI + "api/v2/stream"
+        self.chat_uri = Config.INFERENCE_CHAT_URI + "/api/v1/chat"
+        self.stream_uri = Config.INFERENCE_STREAM_URI + "/api/v2/stream"
 
 
     def queue_async_job(self, messages, stream=False,  generation_args={}, prompt=None):
