@@ -5,6 +5,7 @@ import json
 import re
 from transformers import AutoTokenizer
 import html
+from config import Config
 
 RELATION_GRAPH_PROMPT = """## Legal Relation Extraction Instructions
 
@@ -79,7 +80,10 @@ If any of the following entities are the same as one of the existing extracted e
 
 class RelationProcessor:
     def __init__(self):
-        self.gpt_client = InferenceClient()
+        if Config.RUNPOD_SERVERLESS:
+            self.gpt_client = RunpodClient()
+        else:
+            self.gpt_client = InferenceClient()
         self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mixtral-8x7B-Instruct-v0.1")
         self.seed = 21
 

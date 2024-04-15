@@ -8,12 +8,12 @@ class Config:
     )
     RUNPOD_BEARER_TOKEN = os.getenv("RUNPOD_BEARER_TOKEN", "")
     RUNPOD_BASE_URI = os.getenv(
-        "RUNPOD_BASE_URI", "https://api.runpod.ai/v2/5bniip0yjm37iq"
+        "RUNPOD_BASE_URI", "https://api.runpod.ai/v2/hjxnt6qh1tc7mp"
     )
-    STREAM_CHAT = os.getenv("STREAM_CHAT", True)
+    STREAM_CHAT = os.getenv("STREAM_CHAT", False)
     RUNPOD_STREAM_DELAY = os.getenv("RUNPOD_STREAM_DELAY", 0.0)
     RUNPOD_STATUS_CHECK_DELAY = os.getenv("RUNPOD_STATUS_CHECK_DELAY", 0.1)
-
+    RUNPOD_SERVERLESS=False
 
 class PageConfig:
     page_title = "SCOTi"

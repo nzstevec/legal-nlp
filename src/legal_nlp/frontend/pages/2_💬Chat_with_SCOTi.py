@@ -6,6 +6,7 @@ from fuzzywuzzy import fuzz
 from typing import List
 
 from clients.runpod_client import RunpodClient
+from clients.inference_client import InferenceClient
 from clients.nlp_api_client import APIClient
 from streamlit_extras.app_logo import add_logo
 
@@ -121,7 +122,10 @@ st.title("Chat with SCOTi")
 
 # Initialize the API client with the backend URL
 api_client = APIClient(Config.NLP_CONNECTION_STRING)
-runpod_client = RunpodClient()
+if Config.RUNPOD_SERVERLESS:
+    gpt_client = RunpodClient()
+else:
+    gpt_client = InferenceClient()
 
 # Initialize chat history
 if (
@@ -185,7 +189,7 @@ if prompt := st.chat_input("Enter message here..."):
             # Re-render page so custom components can continue rendering
             st.rerun()
         else:
-            response_generator = runpod_client.queue_async_job(
+            response_generator = gpt_client.queue_async_job(
                 messages=[
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages_hidden
