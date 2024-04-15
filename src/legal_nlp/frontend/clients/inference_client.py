@@ -1,5 +1,5 @@
 import json
-from fastapi import websockets
+import websockets
 import requests
 import time
 from config import Config
