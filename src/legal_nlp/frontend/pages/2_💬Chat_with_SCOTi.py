@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 import json
+import asyncio
 
 from fuzzywuzzy import fuzz
 from typing import List
@@ -198,7 +199,7 @@ if prompt := st.chat_input("Enter message here..."):
             )
 
             if Config.STREAM_CHAT:
-                bot_response = st.write_stream(response_generator)
+                bot_response = asyncio.run(st.write_stream(response_generator))
             else:
                 with st.spinner():
                     bot_response = st.write_stream(response_generator)

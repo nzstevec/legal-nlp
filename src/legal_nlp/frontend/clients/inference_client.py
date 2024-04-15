@@ -17,7 +17,7 @@ class InferenceClient:
             return self.get_gpt_response(messages, generation_args=generation_args, prompt=prompt)
 
 
-    def get_gpt_stream(self, messages, generation_args={}, prompt=None):
+    async def get_gpt_stream(self, messages, generation_args={}, prompt=None):
         data = {
             "messages": messages,
             "seed": generation_args.get('seed', 10),
@@ -31,11 +31,11 @@ class InferenceClient:
             "prompt": prompt
         }
         
-        with websockets.connect(self.stream_uri, ping_interval=None) as websocket:
-            websocket.send(json.dumps(data))
+        async with websockets.connect(self.stream_uri, ping_interval=None) as websocket:
+            await websocket.send(json.dumps(data))
 
             while True:
-                incoming_data = websocket.recv()
+                incoming_data = await websocket.recv()
                 incoming_data = json.loads(incoming_data)
 
                 match incoming_data["event"]:
