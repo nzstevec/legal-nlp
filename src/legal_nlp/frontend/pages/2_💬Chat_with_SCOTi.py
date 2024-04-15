@@ -199,7 +199,7 @@ if prompt := st.chat_input("Enter message here..."):
             )
 
             if Config.STREAM_CHAT:
-                bot_response = asyncio.run(st.write_stream(response_generator))
+                bot_response = st.write_stream(response_generator)
             else:
                 with st.spinner():
                     bot_response = st.write_stream(response_generator)
