@@ -19,23 +19,28 @@ def extract_relation_json_from_text(text):
     return json.loads(f'[{",".join(matches)}]')
 
 
-def chunk_text(text, min_chunk_size=900):
+def chunk_text(text, min_chunk_size=2000):
     chunked_text = text.split(".")
     chunks = []
     
     i = 0
     while i < len(chunked_text):
         chunk = ""
-        while len(chunk) < min_chunk_size and i < len(chunked_text):
-            chunk += chunked_text[i] + "."
+        while len(chunk) < min_chunk_size or "</" not in chunk:
+            if i >= len(chunked_text):
+                break
+            if len(chunked_text[i]) > 0:
+                chunk += chunked_text[i] + "."
             i += 1
-        chunks.append(chunk)
+            
+        if len(chunk) > 0:
+            chunks.append(chunk)
     
     return chunks
 
 
 def get_relation_graph(api_client, interactive=True):
-    if 'ner_text_tagged' not in st.session_state:
+    if 'ner_text_tagged' not in st.session_state or len(st.session_state['ner_text_tagged']) < 4:
         response = "Please return to the entity extraction page and upload a document first."
         return response, response
     
@@ -79,16 +84,54 @@ def get_relation_graph(api_client, interactive=True):
         graph_building_cache['chunks'] = graph_building_cache['chunks'][1:]
         # Cache current partial graph and continue next call
         graph_building_cache['current_relation_graph'] = json.dumps(relation_json, indent=4)
+        
+        # Update graph cache and continue next call
+        st.session_state['graph_building_cache'] = graph_building_cache
     else:
-        # Since all chunks have been processed assume finished and clear cache
-        del st.session_state['graph_building_cache']
-
-    st.session_state['graph_building_cache'] = graph_building_cache
+        if 'graph_building_cache' in st.session_state:
+            # Since all chunks have been processed assume finished and clear cache
+            del st.session_state['graph_building_cache']
 
     return visible_response, hidden_response
 
 
-def draw_relation_graph(relation_json):
+def get_node_by_id(nodes, node_id):
+    return next((node for node in nodes if node.id == node_id), None)
+
+
+def get_connected_components(nodes, edges):
+    # Create an adjacency list representation of the graph
+    adj_list = {node.id: [] for node in nodes}
+    for edge in edges:
+        adj_list[edge.source].append(edge.to)
+        adj_list[edge.to].append(edge.source)
+
+    # DFS function to find connected components
+    def dfs(node, visited, component):
+        visited.add(node)
+        component.append(node)
+        for neighbor in adj_list[node]:
+            if neighbor not in visited:
+                dfs(neighbor, visited, component)
+
+    visited = set()
+    components = []
+
+    # Iterate over all nodes and find connected components
+    for node in adj_list:
+        if node not in visited:
+            component = []
+            dfs(node, visited, component)
+            components.append(component)
+        
+    # Convert node IDs to nodes
+    # components = [[get_node_by_id(nodes, node_id) for node_id in component] for component in components]
+    # print(components)
+
+    return components
+
+
+def draw_relation_graph(relation_json, min_component_len):
     nodes = []
     edges = []
     node_ids = []
@@ -134,12 +177,15 @@ def draw_relation_graph(relation_json):
             node_ids.append(entity2)
             node_degrees[entity2] = 0
         
-        if (entity1, entity2) in relation_duplicates.keys():
-            duplicate_count = relation_duplicates[(entity1, entity2)]
+        # Check for duplicate edges in either direction as edges between nodes are overlapped on rendering...
+        node_pairing = tuple(sorted((entity1, entity2)))
+        if node_pairing in relation_duplicates.keys():
+            duplicate_count = relation_duplicates[node_pairing]
             relation = "\n\n\n" * duplicate_count + f"{relation}"
-            relation_duplicates[(entity1, entity2)] += 1
+            
+            relation_duplicates[node_pairing] += 1
         else:
-            relation_duplicates[(entity1, entity2)] = 1
+            relation_duplicates[node_pairing] = 1
             
             # Increment the degrees of the nodes involved in this edge on non-duplicate relations
             node_degrees[entity1] += 1
@@ -166,8 +212,17 @@ def draw_relation_graph(relation_json):
         target = edge.to
         if source in node_degrees and target in node_degrees:
             # If both source and target are high-degree nodes, increase edge length
-            if node_degrees[source] > 4 and node_degrees[target] > 4:
-                edge.length = 700  # Adjust edge length for high-degree nodes
+            if node_degrees[source] > 3 and node_degrees[target] > 3:
+                edge.length = 1200  # Adjust edge length for high-degree nodes
+
+    # Filter out components with fewer than 3 nodes
+    connected_components = get_connected_components(nodes, edges)
+    filtered_components = [component for component in connected_components if len(component) >= min_component_len]
+    
+    # Extract nodes and edges from filtered components
+    filtered_node_ids = [node for component in filtered_components for node in component]
+    filtered_edges = [edge for edge in edges if edge.source in filtered_node_ids and edge.to in filtered_node_ids]
+    filtered_nodes = [get_node_by_id(nodes, id) for id in filtered_node_ids]
 
     config = agraph.Config(width=1300,
                 height=600,
@@ -176,26 +231,28 @@ def draw_relation_graph(relation_json):
                 # hierarchical=True,
                 layout= {
                     "randomSeed": 10,
-                    "improvedLayout": False,    # Enable if need initial layout to converge faster
+                    "improvedLayout": True,    # Enable if need initial layout to converge faster
                     "hierarchical": {
                     "direction": "RL",
-                    "sortMethod": "directed",
-                    "levelSeparation": 200,
-                    "nodeSpacing": 100,
-                    "treeSpacing": 200,
-                    "blockShifting": False,     # Enable if need initial layout to converge faster
-                    "edgeMinimization": False,  # Enable if need initial layout to converge faster
+                    "sortMethod": "hubsize",
+                    "levelSeparation": 50,
+                    "nodeSpacing": 30,
+                    "treeSpacing": 50,
+                    "blockShifting": True,     # Enable if need initial layout to converge faster
+                    "edgeMinimization": True,  # Enable if need initial layout to converge faster
                     "parentCentralization": True,
-                    "customLayout": "radialLayout",
                     "sortMethod": "hubsize",
                     # "shakeTowards": "roots"
                     }
                 },
+                groups= {
+                    "useDefaultGroups": True,
+                }
                 # **kwargs
             )
-
-    return_value = agraph.agraph(nodes=nodes, 
-                        edges=edges, 
+    
+    return_value = agraph.agraph(nodes=filtered_nodes, 
+                        edges=filtered_edges, 
                         config=config)
     
     return return_value

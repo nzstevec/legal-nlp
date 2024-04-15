@@ -1,5 +1,6 @@
 import graphviz
 from clients.runpod_client import RunpodClient
+from clients.inference_client import InferenceClient
 import json
 import re
 from transformers import AutoTokenizer
@@ -11,6 +12,7 @@ You are an expert entity relation extractor for legal documents in court cases.
 
 ### Task Description
 
+You are tasked with building a knowledge graph (also referred to as a relation graph) which captures all the key relations between legal entities in a court case. 
 You will be given a legal document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example `<DATE>17 December 2020</DATE>` represents a detected date. 
 Your task is to extract ALL the relations between ALL the tagged entities in the text in a JSON format.
 
@@ -18,23 +20,25 @@ Your task is to extract ALL the relations between ALL the tagged entities in the
 
 The JSON should include the following fields:
  - `relation`: The relation between the entities, named in all caps and in simple directional format (e.g., CONTRACTED_WITH).
- - `entity1`: An object representing the first entity in the relation with an abbreviated label and its type.
- - `entity2`: An object representing the second entity in the relation with an abbreviated label and its type.
+ - `entity1`: An object representing the first entity in the relation with an abbreviated label and its type. **Allowed entity types:** JUDGE, COURT, GPE, RESPONDENT, DATE, WITNESS, PRECEDENT, CASE_NUMBER, LAWYER, PROVISION, STATUTE, PETITIONER, ORG, PERSON, OTHER
+ - `entity2`: An object representing the second entity in the relation with an abbreviated label and its type. **Allowed entity types:** JUDGE, COURT, GPE, RESPONDENT, DATE, WITNESS, PRECEDENT, CASE_NUMBER, LAWYER, PROVISION, STATUTE, PETITIONER, ORG, PERSON, OTHER
  - `additional_info`: Additional information about the relation, including a description.
- 
+
 **Relation labelling:** Relations should be named in all caps and in simple directional format.
  - The aim is to achieve simplicity and clarity in the knowledge graph, making it accessible for a vast audience.
- - Make sure to capture the direction of the relationship as well, for example in the relation Carmichael CONTRACTED_WITH OneSteel, Carmichael should be `entity1` and OneSteel should be `entity2`.
+ - The graph is undirect so where possible try to avoid naming the relations in a way that would imply a one way directed relation
+ - If a relation between 2 entities with the same relation label already exists in the graph do not add a new relation even if the description is different.
+ - Do not create relations between an entity and itself.
+ - For provisions and statues make sure you model how they are relevant and related to the existing entities / parties in the court case.
 
 **Entities labelling**: Entities should be proper nouns.
- - **Allowed entity types:** JUDGE, COURT, GPE, RESPONDENT, DATE, WITNESS, PRECEDENT, CASE_NUMBER, LAWYER, PROVISION, STATUTE, PETITIONER, ORG, PERSON, OTHER
  - When extracting entities, it's vital to ensure consistency.
  - DO NOT make entity labels longer than 4 words unless it is either a statue, provision or a precedent. In which case you should quote the entity name as is given in the text.
  - Entities should be short proper nouns.
  - Statues, provisions, and references to precedent cases are entities.
  
 **Consistency:** When extracting entities, it's vital to ensure consistency.
- - If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity throughout the relation graph. In this example, use "John Doe" as the entity name. Remember, the relation graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial. 
+ - An entity, such as "John Doe", could be referred to by different names or pronouns (e.g., "Joe", "John", "Mr. Doe", "he") between the given text and the existing relations in the graph. Always use the same identifier as already existing within the graph if the entity already exists, otherwise use the most copmlete identifier for that entity, in this using case use "John Doe".
  - If a similar relation already exists try to reuse the same relation label wherever appropriate.
  
 ### JSON Output Example
@@ -48,15 +52,7 @@ The JSON should include the following fields:
     "additional_info": {
       "description": "The appellant ('Carmichael', the shipper) contracted with the second respondent (OneSteel) for the manufacture and supply of head-hardened steel rails."
     }
-  },
-  {
-    "relation": "REFERS_TO_PROVISION",
-    "entity1": { "entity": "statement of issues", "type": "OTHER" },
-    "entity2": { "entity": "<PROVISION>s 5B</PROVISION>", "type": "PROVISION" },
-    "additional_info": {
-        "description": "The statement of issues refers to specific provisions (s 5B) of the Civil Liability Act." 
-        } 
-    }
+  }
 ]
 ```
 ### Response Format
@@ -67,19 +63,23 @@ ONLY RESPOND IN JSON!
 EXAMPLES_PROMPT = """### Existing Entity Relations in Court Case
 {existing_relations}
 
- - Wherever possible try to relate any new entities to the entity relations above!
-
 """
 
 GENERATION_PROMPT = """### Text for Entity Relation Extraction
-Here is the text from which to extract the entity relations, wherever possible try to relate any new entities to the existing entity relations.
+Here is the text from which to extract the entity relations.
 
-{text}"""
+{text}
+
+### Task
+1. Extract relations for the detected entities. 
+2. For any new entities added to the graph try to extrapolate the relations between them and the existing entities whenever possible.
+3. Create any new implicit relations based on the existing relations and info provided in the graph.
+If any of the following entities are the same as one of the existing extracted entities but under a different or similar name then use the already existing entity name in the graph. Return the solution to all tasks in a single json list."""
 
 
 class RelationProcessor:
     def __init__(self):
-        self.gpt_client = RunpodClient()
+        self.gpt_client = InferenceClient()
         self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mixtral-8x7B-Instruct-v0.1")
         self.seed = 21
 
@@ -90,6 +90,11 @@ class RelationProcessor:
         # Find all matches of the pattern in the text
         matches = re.findall(pattern, text, re.DOTALL)
         return json.loads(f'[{",".join(matches)}]')
+    
+    def extract_entities_from_text(self, text):
+        pattern = r'<.*?>(.*?)<\/.*?>'
+        matches = re.findall(pattern, text)
+        return matches
 
     def strip_angle_brackets(self, entity):
         parts = entity.split(">")
@@ -125,6 +130,7 @@ class RelationProcessor:
         return relation_graph_dict
 
     def get_relation_graph(self, text: str, existing_relations: str = "", max_new_tokens: int = 2048):
+        entities = self.extract_entities_from_text(text)
         generate_relations_json_prompt = RELATION_GRAPH_PROMPT
         generate_relations_json_prompt += EXAMPLES_PROMPT.format(existing_relations=existing_relations)
         generate_relations_json_prompt += GENERATION_PROMPT.format(text=text)
@@ -136,9 +142,10 @@ class RelationProcessor:
         )
         
         chat_prompt += " ["
-        
+        print(chat_prompt)
         gpt_response = self.gpt_client.get_gpt_response({}, generation_args={"max_tokens": max_new_tokens, "seed": self.seed}, prompt=chat_prompt)
-
+        print("====")
+        print(gpt_response)
         relations_json = self.extract_json_from_text(existing_relations + "\n" + gpt_response)
         
         dot_graph = self.json_to_dot(relations_json)

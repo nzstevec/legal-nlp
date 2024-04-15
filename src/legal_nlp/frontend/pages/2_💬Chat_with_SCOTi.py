@@ -1,4 +1,6 @@
 import streamlit as st
+from datetime import datetime
+import json
 
 from fuzzywuzzy import fuzz
 from typing import List
@@ -45,7 +47,19 @@ def reset_conversation():
 
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
     stop_graph_generation()
-    
+
+
+def save_graph(graph):
+    filename = "relation-graph-" + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + ".txt"
+    with open(filename, 'w') as file:
+        file.write(json.dumps(graph, indent=4)) 
+
+
+def delete_last_message():
+    deleted_message = st.session_state["messages_visible"].pop()
+    if st.session_state["messages_hidden"][-1]['role'] == deleted_message['role']:
+        st.session_state["messages_hidden"].pop()
+            
 
 def add_message_to_both_states(role, message):
     add_visible_message_to_state(role, message)
@@ -130,7 +144,8 @@ for i, message in enumerate(st.session_state.messages_visible):
             # Assume this response includes a relation graph
             st.markdown(message["content"].split("[")[0])
             relation_json = extract_relation_json_from_text(message["content"])
-            draw_relation_graph(relation_json)
+            draw_relation_graph(relation_json, 4)
+            st.button("Save Graph", on_click=save_graph, kwargs={"graph": relation_json})
         else:
             # Assume this is just a text response
             st.markdown(message["content"], unsafe_allow_html=True)
@@ -180,6 +195,13 @@ if prompt := st.chat_input("Enter message here..."):
 
             bot_response = st.write_stream(response_generator)
             add_message_to_both_states("assistant", bot_response)
-            
-st.button("Clear Conversation", on_click=reset_conversation)
+
+
+# Chat Buttons
+col1, col2, _ = st.columns((1, 1, 6), gap="small")
+with col1:  
+    st.button("Clear Conversation", on_click=reset_conversation)
+with col2:
+    st.button("Delete last message", on_click=delete_last_message)
+    
 st.session_state["current_gif"] = SCOTI_HAPPY_GIF
