@@ -12,9 +12,9 @@ class InferenceClient:
 
     def queue_async_job(self, messages, stream=False,  generation_args={}, prompt=None):
         if stream:
-            self.get_gpt_stream(messages, generation_args=generation_args, prompt=prompt)
+            return self.get_gpt_stream(messages, generation_args=generation_args, prompt=prompt)
         else:
-            self.get_gpt_response(messages, generation_args=generation_args, prompt=prompt)
+            return self.get_gpt_response(messages, generation_args=generation_args, prompt=prompt)
 
 
     async def get_gpt_stream(self, messages, generation_args={}, prompt=None):
