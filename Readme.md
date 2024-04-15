@@ -5,13 +5,9 @@ pip install -r requirements.txt
 # spacy-transformers has a dependency for lower transformers version but mistral requires higher..
 pip install transformers==4.39.3
 
-python -m spacy download en_core_web_sm
-
 git lfs install
 
-cd src/legal_nlp/nlp/models
-
-cd models
+cd src\legal_nlp\backend\nlp\models
 
 git clone https://huggingface.co/opennyaiorg/en_legal_ner_trf
 
