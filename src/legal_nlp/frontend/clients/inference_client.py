@@ -31,11 +31,11 @@ class InferenceClient:
             "prompt": prompt
         }
         
-        async with websockets.connect(self.stream_uri, ping_interval=None) as websocket:
-            await websocket.send(json.dumps(data))
+        with websockets.connect(self.stream_uri, ping_interval=None) as websocket:
+            websocket.send(json.dumps(data))
 
             while True:
-                incoming_data = await websocket.recv()
+                incoming_data = websocket.recv()
                 incoming_data = json.loads(incoming_data)
 
                 match incoming_data["event"]:
