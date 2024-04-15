@@ -17,7 +17,7 @@ class InferenceClient:
             return self.get_gpt_response(messages, generation_args=generation_args, prompt=prompt)
 
 
-    async def get_gpt_stream(self, messages, generation_args={}, prompt=None):
+    def get_gpt_stream(self, messages, generation_args={}, prompt=None):
         data = {
             "messages": messages,
             "seed": generation_args.get('seed', 10),
