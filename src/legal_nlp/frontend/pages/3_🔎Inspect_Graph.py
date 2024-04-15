@@ -17,6 +17,10 @@ st.set_page_config(
     page_icon=PageConfig.page_icon,
 )
 
+# Add scoti gif
+SCOTI_HAPPY_GIF = "frontend/static/gifs/SCOTi_04_Wagging-Tail_V2.gif"
+st.session_state["current_gif"] = SCOTI_HAPPY_GIF
+    
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
 with st.sidebar:
