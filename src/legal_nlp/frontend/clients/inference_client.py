@@ -12,7 +12,7 @@ class InferenceClient:
         if stream:
             yield from self.get_gpt_stream(messages, generation_args=generation_args, prompt=prompt)
         else:
-            return self.get_gpt_response(messages, generation_args=generation_args, prompt=prompt)
+            yield from self.get_gpt_response(messages, generation_args=generation_args, prompt=prompt)
 
     def get_gpt_stream(self, messages, generation_args={}, prompt=None):
         data = {
@@ -24,9 +24,11 @@ class InferenceClient:
             "repetition_penalty": generation_args.get('repetition_penalty', 1.05),
             "top_k": generation_args.get('top_k', 30),
             "add_bos_token": generation_args.get('add_bos_token', False),
-            "use_lora": generation_args.get('use_lora', False),
-            "prompt": prompt
+            "use_lora": generation_args.get('use_lora', False)
         }
+        
+        if prompt is not None:
+            data["prompt"] = prompt
 
         ws = websocket.create_connection(self.stream_uri)  # Connect synchronously
         ws.send(json.dumps(data))
@@ -54,9 +56,12 @@ class InferenceClient:
             "repetition_penalty": generation_args.get('repetition_penalty', 1.05),
             "top_k": generation_args.get('top_k', 30),
             "add_bos_token": generation_args.get('add_bos_token', False),
-            "use_lora": generation_args.get('use_lora', False),
-            "prompt": prompt
+            "use_lora": generation_args.get('use_lora', False)
         }
+        
+        if prompt is not None:
+            data["prompt"] = prompt
+            
         response = requests.post(self.chat_uri, headers=headers, json=data, verify=True)
 
         return response.json()['response']

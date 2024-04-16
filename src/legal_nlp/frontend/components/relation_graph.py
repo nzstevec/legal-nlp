@@ -54,18 +54,10 @@ def get_relation_graph(api_client, interactive=True):
             'chunk_iters': 0
         }
     
-    # Give the GPT model the original document
-    hidden_response_entities = "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. " \
-        "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. " \
-        "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. " \
-        "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n" \
-        + st.session_state['ner_text_tagged'] \
-        + "\n<hidden_message_end>\n"
-    
     graph_svg, relation_json = api_client.build_up_relation_graph(graph_building_cache['chunks'][0], graph_building_cache['current_relation_graph']) 
 
     # Give the GPT model the relations that it has extracted from the document in the chat log
-    hidden_response = hidden_response_entities + "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n" \
+    hidden_response = "\n<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere are the relations between the entities that have been extracted using a specialized NLP relation extractor.\n" \
         + json.dumps(relation_json, indent=4) \
         + "\n</hidden_message_end>\n"
     

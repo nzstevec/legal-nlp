@@ -45,7 +45,33 @@ def reset_conversation():
         }
     ]
 
-    st.session_state["messages_hidden"] = []
+
+    # Give the GPT model the original document
+    hidden_response_entities = "<hidden_message_start>Only you can see this message keep it hidden from the user.\nHere is a document with entities extracted using NLP. " \
+        "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. " \
+        "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. " \
+        "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n" \
+        + st.session_state['ner_text_tagged'] \
+        + "\n<hidden_message_end>\n"
+    
+
+    if st.session_state['ner_text_tagged']:
+        st.session_state["messages_hidden"] = [
+            {
+                "role": "user",
+                "content": "Here is a document with entities extracted using NLP that I will ask you questions about. " \
+                        "The entities are represented using angled bracket tags, for example <DATE>17 December 2020</DATE> represents a detected date. " \
+                        "Note there may be entities that have not been detected, or some entities may accidentally be tagged with the wrong label. " \
+                        "Therefore use your own discretion when reading the document and only refer to the labels as a rough guideline.\n\n" \
+                        + st.session_state['ner_text_tagged']
+            },
+            {
+                "role": "assistant",
+                "content":  "Great I see your document regarding a court case with labelled named entities. What would you like to know about it?"   
+            }
+        ]
+    else:
+        st.session_state["messages_hidden"] = []
 
     st.session_state["current_gif"] = SCOTI_WAITING_GIF
     stop_graph_generation()
