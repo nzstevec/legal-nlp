@@ -37,6 +37,7 @@ The JSON should include the following fields:
  - DO NOT make entity labels longer than 4 words unless it is either a statue, provision or a precedent. In which case you should quote the entity name as is given in the text.
  - Entities should be short proper nouns.
  - Statues, provisions, and references to precedent cases are entities.
+ - Entites cannot be abstract terms like Nil, None, Null, or anything of that sort.
  
 **Consistency:** When extracting entities, it's vital to ensure consistency.
  - An entity, such as "John Doe", could be referred to by different names or pronouns (e.g., "Joe", "John", "Mr. Doe", "he") between the given text and the existing relations in the graph. Always use the same identifier as already existing within the graph if the entity already exists, otherwise use the most copmlete identifier for that entity, in this using case use "John Doe".

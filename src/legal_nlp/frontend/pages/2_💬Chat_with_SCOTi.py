@@ -45,7 +45,7 @@ def reset_conversation():
         }
     ]
 
-    if st.session_state['ner_text_tagged']:
+    if st.session_state.get('ner_text_tagged') is not None:
         st.session_state["messages_hidden"] = [
             {
                 "role": "user",
