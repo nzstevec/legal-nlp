@@ -18,3 +18,6 @@ pymupdf==1.24.1
 striprtf==0.0.26
 websockets==12.0
 websocket-client==1.7.0
+streamlit-tags==1.2.8
+gliner==0.2.8
+gliner-spacy==0.0.10

@@ -5,9 +5,9 @@ class APIClient:
     def __init__(self, base_url):
         self.base_url = base_url
 
-    def process_text(self, text):
+    def process_text(self, text, labels):
         endpoint = f"{self.base_url}/process_text"
-        data = {"text": str(text)}
+        data = {"text": str(text), "labels": labels}
         response = requests.post(endpoint, json=data)
         response.raise_for_status()
 

@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.post("/process_text/")
 async def process_text(request: TextRequest):
-    return text_processor.process_text(request.text)
+    return text_processor.process_text(request.text, request.labels)
 
 
 @router.get("/ner_labels/")

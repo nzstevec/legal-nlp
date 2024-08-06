@@ -5,6 +5,7 @@ import colorsys
 from streamlit_extras.app_logo import add_logo
 from streamlit_extras.switch_page_button import switch_page
 import streamlit_shadcn_ui as ui
+from streamlit_tags import st_tags
 
 from utils.text_extraction import load_file_contents
 from clients.nlp_api_client import APIClient
@@ -87,7 +88,7 @@ def add_plaintext_tags(text, ner_tags):
 
 def label_text_entities(text_input):
     # Call the API client to process the text
-    response = api_client.process_text(text_input)
+    response = api_client.process_text(text_input, labels_input)
     ner_tags = response["ner_tags"]
 
     # Assign colors from the color palette to each label
@@ -156,27 +157,35 @@ if uploaded_files:
     st.session_state.ner_input = load_file_contents(uploaded_files)
 
 
-col1, col2 = st.columns((0.7, 0.3), gap="medium")
-with col1:
-    text_input = st.text_area(
-        "Enter text here:",
-        value=st.session_state["ner_input"],
-        height=250,
-    )
-with col2:
-    # Show table of entity labels
-    ner_labels = split_list_into_df(api_client.get_ner_labels(), 3)
+labels_input = st_tags(
+    label='Entity labels:',
+    text='Press enter to add more',
+    value=['person', 'company'],
+    suggestions=[],
+    maxtags = 16,
+    key='ner_labels')
 
-    ner_table_html = ner_labels.to_html(index=False, header=False)
-    ner_table_html = ner_table_html.replace(
-        "<table",
-        '<table style="font-size:.875rem; line-height:1.25rem; border-color:#e5e7eb; border-style:solid;"',
-    )
-    st.write('<h5 style="margin-top:1rem">Labels</h5>', unsafe_allow_html=True)
-    st.write(ner_table_html, unsafe_allow_html=True)
+text_input = st.text_area(
+    "Enter text here:",
+    value=st.session_state["ner_input"],
+    height=250,
+)
+
+# Evenly space columns
+st.markdown("""
+            <style>
+                div[data-testid="column"] {
+                    width: fit-content !important;
+                    flex: unset;
+                }
+                div[data-testid="column"] * {
+                    width: fit-content !important;
+                }
+            </style>
+            """, unsafe_allow_html=True)
 
 # Process and send to scoti buttons
-col1_1, col1_2 = st.columns((0.6, 0.4), gap="medium")
+col1_1, col1_2, _ = st.columns((1,1,1), gap="small")
 with col1_1:
     if st.button("Process"):
         try:

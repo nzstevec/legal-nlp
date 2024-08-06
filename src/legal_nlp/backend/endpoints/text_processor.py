@@ -3,10 +3,19 @@ from config import Config
 
 
 class TextProcessor:
-    def __init__(self):
-        self.nlp = spacy.load(Config.NER_MODEL)
+    def __init__(self):        
+        self.custom_spacy_config = { "gliner_model": "EmergentMethods/gliner_medium_news-v2.1",
+                            "chunk_size": 250,
+                            "labels": ["people","company"],
+                            "style": "ent"}
+        self.nlp = spacy.blank("en")
+        self.nlp.add_pipe("gliner_spacy", config=self.custom_spacy_config)
 
-    def process_text(self, text: str):
+    def process_text(self, text: str, labels: list[str]):
+        # Change gliner_spacy labels to the labels provided
+        gliner_spacy_pipe = self.nlp.get_pipe("gliner_spacy")
+        gliner_spacy_pipe.labels = labels
+        
         doc = self.nlp(text)
         # Process the text here
         return {
@@ -16,10 +25,7 @@ class TextProcessor:
         }
 
     def get_ner_labels(self):
-        labels = set()
-        for ent in self.nlp.get_pipe("ner").labels:
-            labels.add(ent)
-        return list(labels)
+        return self.custom_spacy_config["labels"]
 
 
 text_processor = TextProcessor()

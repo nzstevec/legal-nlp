@@ -20,4 +20,3 @@ class Config:
     RUNPOD_STATUS_CHECK_DELAY = os.getenv("RUNPOD_STATUS_CHECK_DELAY", 0.1)
     RUNPOD_SERVERLESS=False
     
-    NER_MODEL = "nlp/models/en_legal_ner_trf"
