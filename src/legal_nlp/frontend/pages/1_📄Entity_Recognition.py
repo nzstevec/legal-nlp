@@ -160,7 +160,7 @@ if uploaded_files:
 labels_input = st_tags(
     label='Entity labels:',
     text='Press enter to add more',
-    value=['person', 'company'],
+    value=['person', 'organization', 'location', 'person', 'date', 'law', 'technology', 'number'],
     suggestions=[],
     maxtags = 16,
     key='ner_labels')
