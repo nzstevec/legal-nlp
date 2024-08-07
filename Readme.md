@@ -5,6 +5,8 @@ pip install -r requirements.txt
 
 pip install transformers==4.39.3
 
+pip install tokenizers==0.19.1
+
 git lfs install
 
 cd src\legal_nlp\backend\nlp\models
