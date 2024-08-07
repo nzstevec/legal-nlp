@@ -7,22 +7,22 @@ from transformers import AutoTokenizer
 import html
 from config import Config
 
-RELATION_GRAPH_PROMPT = """## Legal Relation Extraction Instructions
+RELATION_GRAPH_PROMPT = """## Relation Extraction Instructions
 
-You are an expert entity relation extractor for legal documents in court cases.
+You are an expert entity relation extractor for documents.
 
 ### Task Description
 
-You are tasked with building a knowledge graph (also referred to as a relation graph) which captures all the key relations between legal entities in a court case. 
-You will be given a legal document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example `<DATE>17 December 2020</DATE>` represents a detected date. 
+You are tasked with building a knowledge graph (also referred to as a relation graph) which captures all the key relations between entities in a document. 
+You will be given a document with entities extracted using NLP. The extracted entities are represented using angled bracket tags, for example `<DATE>17 December 2020</DATE>` represents a detected date. 
 Your task is to extract ALL the relations between ALL the tagged entities in the text in a JSON format.
 
 ### JSON Output Format
 
 The JSON should include the following fields:
  - `relation`: The relation between the entities, named in all caps and in simple directional format (e.g., CONTRACTED_WITH).
- - `entity1`: An object representing the first entity in the relation with an abbreviated label and its type. **Allowed entity types:** JUDGE, COURT, GPE, RESPONDENT, DATE, WITNESS, PRECEDENT, CASE_NUMBER, LAWYER, PROVISION, STATUTE, PETITIONER, ORG, PERSON, OTHER
- - `entity2`: An object representing the second entity in the relation with an abbreviated label and its type. **Allowed entity types:** JUDGE, COURT, GPE, RESPONDENT, DATE, WITNESS, PRECEDENT, CASE_NUMBER, LAWYER, PROVISION, STATUTE, PETITIONER, ORG, PERSON, OTHER
+ - `entity1`: An object representing the first entity in the relation with an abbreviated label and its type.
+ - `entity2`: An object representing the second entity in the relation with an abbreviated label and its type.
  - `additional_info`: Additional information about the relation, including a description.
 
 **Relation labelling:** Relations should be named in all caps and in simple directional format.
@@ -30,13 +30,10 @@ The JSON should include the following fields:
  - The graph is undirect so where possible try to avoid naming the relations in a way that would imply a one way directed relation
  - If a relation between 2 entities with the same relation label already exists in the graph do not add a new relation even if the description is different.
  - Do not create relations between an entity and itself.
- - For provisions and statues make sure you model how they are relevant and related to the existing entities / parties in the court case.
 
 **Entities labelling**: Entities should be proper nouns.
  - When extracting entities, it's vital to ensure consistency.
- - DO NOT make entity labels longer than 4 words unless it is either a statue, provision or a precedent. In which case you should quote the entity name as is given in the text.
  - Entities should be short proper nouns.
- - Statues, provisions, and references to precedent cases are entities.
  - Entites cannot be abstract terms like Nil, None, Null, or anything of that sort.
  
 **Consistency:** When extracting entities, it's vital to ensure consistency.
@@ -62,7 +59,7 @@ ONLY RESPOND IN JSON!
 
 """
 
-EXAMPLES_PROMPT = """### Existing Entity Relations in Court Case
+EXAMPLES_PROMPT = """### Existing Entity Relations
 {existing_relations}
 
 """

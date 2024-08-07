@@ -223,8 +223,21 @@ if prompt := st.chat_input("Enter message here..."):
             add_message_to_both_states("assistant", bot_response)
 
 
+# Evenly space columns
+st.markdown("""
+            <style>
+                div[data-testid="column"] {
+                    width: fit-content !important;
+                    flex: unset;
+                }
+                div[data-testid="column"] * {
+                    width: fit-content !important;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+
 # Chat Buttons
-col1, col2, _ = st.columns((1, 1, 6), gap="small")
+col1, col2, _ = st.columns((1, 1, 1), gap="small")
 with col1:  
     st.button("Clear Conversation", on_click=reset_conversation)
 with col2:
