@@ -1,0 +1,13 @@
+# syntax=docker/dockerfile:1
+
+FROM stevechapman/legal_nlp:1.7 AS base
+
+WORKDIR /
+
+COPY . .
+
+WORKDIR /src/legal_nlp
+
+EXPOSE 8080 8501 8542 2234 2235
+
+CMD ["python", "start_both.py"]

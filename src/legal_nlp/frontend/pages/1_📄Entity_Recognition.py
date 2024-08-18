@@ -146,61 +146,67 @@ api_client = APIClient(Config.NLP_CONNECTION_STRING)
 
 # Can accept multiple files currently
 uploaded_files = st.file_uploader(
-    label="File Uploader",
-    label_visibility="hidden",
+    label="Upload legal document here or simply enter the text to be processed below:",
+    # label_visibility="hidden",
     accept_multiple_files=True,
     type=[".docx", ".pdf", ".txt", ".rtf"],
 )
-
+show_processed_text = False
 # This needs to be before where the text_area input box is defined
 if uploaded_files:
     st.session_state.ner_input = load_file_contents(uploaded_files)
 
+c_1, c_2 = st.columns((0.8, 0.2), gap="medium")
+with c_1.expander("🞂 Input Text And Labels", expanded=not show_processed_text):
 
-labels_input = st_tags(
-    label='Entity labels:',
-    text='Press enter to add more',
-    value=['person', 'organization', 'location', 'person', 'date', 'law', 'technology', 'number'],
-    suggestions=[],
-    maxtags = 16,
-    key='ner_labels')
+    col1, col2 = st.columns((0.7, 0.3), gap="medium")
+    with col1:
+        text_input = st.text_area(
+            "Enter text here:",
+            value=st.session_state["ner_input"],
+            height=250,
+        )
+        labels_input = st_tags(
+            label='Entity labels:',
+            text='Press enter to add more',
+            value=['person', 'organization', 'location', 'person', 'date', 'law', 'technology', 'number'],
+            suggestions=[],
+            maxtags = 16,
+            key='ner_labels')
+    with col2:
+        # Show table of entity labels
+        ner_labels = split_list_into_df(api_client.get_ner_labels(), 1)
 
-text_input = st.text_area(
-    "Enter text here:",
-    value=st.session_state["ner_input"],
-    height=250,
-)
-
-# Evenly space columns
-st.markdown("""
-            <style>
-                div[data-testid="column"] {
-                    width: fit-content !important;
-                    flex: unset;
-                }
-                div[data-testid="column"] * {
-                    width: fit-content !important;
-                }
-            </style>
-            """, unsafe_allow_html=True)
+        ner_table_html = ner_labels.to_html(index=False, header=False)
+        ner_table_html = ner_table_html.replace(
+            "<table",
+            '<table style="font-size:.875rem; line-height:1.25rem; border-color:#e5e7eb; border-style:solid;"',
+        )
+        st.write('<h5 style="margin-top:1rem">Labels</h5>', unsafe_allow_html=True)
+        st.write(ner_table_html, unsafe_allow_html=True)
 
 # Process and send to scoti buttons
-col1_1, col1_2, _ = st.columns((1,1,1), gap="small")
-with col1_1:
-    if st.button("Process"):
+
+with c_2:
+    if st.button("Process text",help="If you have upload all documents and/or entered all text, click here to process entity extraction."):
         try:
-            with st.spinner("Extracting Entities..."):
+            with st.spinner("Extracting Legal Entities ..."):
                 st.session_state["ner_input"] = text_input
                 highlight_html, ner_text_tagged = label_text_entities(text_input)
                 st.session_state["ner_highlight"] = highlight_html
                 st.session_state["ner_text_tagged"] = ner_text_tagged
         except Exception as e:
             st.error(f"Error processing text: {e}")
-with col1_2:
-    if st.button("Send to SCOTi"):
-        switch_page("chat with scoti")
+
 
 # Render text with ner label highlights
 # Double up new lines to render in markdown, replace 2 space indents with html space tag
 display_text = st.session_state['ner_highlight'].replace('\n', '\n\n').replace('  ','&nbsp;&nbsp;')
-st.markdown(display_text, unsafe_allow_html=True)
+
+c_1, c_2 = st.columns((0.8, 0.2), gap="medium")
+with c_1.expander("🞂 Processed Text", expanded=show_processed_text):
+    st.markdown(display_text, unsafe_allow_html=True)
+
+with c_2:
+    if st.button("Generate relation graph",help="Click here to send your text to SCOTi.",):
+        switch_page("chat with scoti")

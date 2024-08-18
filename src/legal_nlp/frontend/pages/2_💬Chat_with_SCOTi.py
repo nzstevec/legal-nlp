@@ -41,7 +41,7 @@ def reset_conversation():
     st.session_state["messages_visible"] = [
         {
             "role": "assistant",
-            "content": "Let's start a new conversation. What would you like to ask me?",
+            "content": "I'm generating a relation graph for your document. Please wait...",
         }
     ]
 
@@ -69,8 +69,15 @@ def reset_conversation():
 
 def save_graph(graph):
     filename = "relation-graph-" + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + ".txt"
+    file_contents = json.dumps(graph, indent=4)
     with open(filename, 'w') as file:
-        file.write(json.dumps(graph, indent=4)) 
+        file.write(file_contents) 
+    st.download_button(
+        label="Download file",
+        data=file_contents,
+        file_name=filename,
+        mime="text/plain",
+    )
 
 
 def delete_last_message():
@@ -166,7 +173,15 @@ for i, message in enumerate(st.session_state.messages_visible):
             st.markdown(message["content"].split("[")[0])
             relation_json = extract_relation_json_from_text(message["content"])
             draw_relation_graph(relation_json, 4)
-            st.button("Save Graph", on_click=save_graph, kwargs={"graph": relation_json})
+            # st.button("Save Graph", on_click=save_graph, kwargs={"graph": relation_json})
+            filename = "relation-graph-" + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + ".txt"
+            file_contents = json.dumps(relation_json, indent=4) 
+            st.download_button(
+                label="Download file",
+                data=file_contents,
+                file_name=filename,
+                mime="text/plain",
+            )
         else:
             # Assume this is just a text response
             st.markdown(message["content"], unsafe_allow_html=True)
@@ -181,6 +196,18 @@ for i, message in enumerate(st.session_state.messages_visible):
             add_visible_message_to_state("assistant", bot_visible_response)
             add_hidden_message_to_state("assistant", bot_hidden_response)
             st.rerun()
+
+# First entry with pre-defined prompt
+if "not_first_entry" not in st.session_state:
+    st.session_state["not_first_entry"] = True
+    prompt = "Hey SCOTi, can you show me the relation graph for this document?"
+    with st.spinner():
+            bot_visible_response, bot_hidden_response = SCOTI_FUNCTIONS[prompt](api_client)
+    st.write(bot_visible_response, unsafe_allow_html=True)
+    add_visible_message_to_state("assistant", bot_visible_response)
+    add_hidden_message_to_state("assistant", bot_hidden_response)
+    # Re-render page so custom components can continue rendering
+    st.rerun()
 
 # Accept user input
 if prompt := st.chat_input("Enter message here..."):

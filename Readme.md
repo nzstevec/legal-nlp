@@ -28,3 +28,16 @@ insert your api keys into src\legal_nlp\frontend\config.py
 python start_both.py
 
 ![NER Example](https://gitlab.com/SmartR_AI/gpt/demo-projects/legal-nlp/-/raw/main/images/NER_Example.png)
+
+### Docker usage
+
+docker build -t stevechapman/legal_nlp:1.12b .
+
+docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=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" stevechapman/legal_nlp:1.12b
+
+docker login
+
+docker push stevechapman/legal_nlp:1.12
+
+The container registry is in hub.docker.com
+The docker image url is configured in the portal solution

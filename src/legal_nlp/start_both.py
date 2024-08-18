@@ -1,4 +1,5 @@
 import subprocess
+from time import sleep
 from backend.config import Config as BackendConfig
 
 def main():
@@ -11,6 +12,8 @@ def main():
         "--reload"
     ], cwd="./backend")
 
+    sleep(20)
+    
     # Launch Streamlit frontend
     frontend_process = subprocess.Popen(["streamlit", "run", "frontend/🏠Home.py"])
 
