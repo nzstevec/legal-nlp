@@ -4,7 +4,9 @@ clone from portal.scoti.au branch from github repo nzstevec/legal-nlp
 
 docker build -t stevechapman/legal_nlp:1.15 .
 
-docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=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" stevechapman/legal_nlp:1.15
+create a huggingface.co account and generate an access token or get the one steve put in secretsmgr on aws
+
+docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=somenewtoken" stevechapman/legal_nlp:1.15
 
 docker login
 
