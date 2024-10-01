@@ -1,4 +1,19 @@
-## Install Instructions
+### New Install Instructions
+
+clone from portal.scoti.au branch from github repo nzstevec/legal-nlp
+
+docker build -t stevechapman/legal_nlp:1.15 .
+
+docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=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" stevechapman/legal_nlp:1.15
+
+docker login
+
+docker push stevechapman/legal_nlp:1.15
+
+The container registry is in hub.docker.com
+The docker image url is configured in the portal solution
+
+## Original Install Instructions
 conda create -n legal-nlp python=3.11
 
 pip install -r requirements.txt
@@ -29,15 +44,4 @@ python start_both.py
 
 ![NER Example](https://gitlab.com/SmartR_AI/gpt/demo-projects/legal-nlp/-/raw/main/images/NER_Example.png)
 
-### Docker usage
 
-docker build -t stevechapman/legal_nlp:1.15 .
-
-docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=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" stevechapman/legal_nlp:1.15
-
-docker login
-
-docker push stevechapman/legal_nlp:1.15
-
-The container registry is in hub.docker.com
-The docker image url is configured in the portal solution
