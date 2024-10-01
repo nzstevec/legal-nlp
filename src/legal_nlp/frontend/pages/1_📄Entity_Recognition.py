@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import colorsys
+from typing import List
 
 from streamlit_extras.app_logo import add_logo
 from streamlit_extras.switch_page_button import switch_page
@@ -118,7 +119,6 @@ def split_list_into_df(my_list, num_columns):
     df.style.hide()
     return df
 
-
 st.set_page_config(
     layout=PageConfig.layout,
     page_title=PageConfig.page_title,
@@ -146,46 +146,34 @@ api_client = APIClient(Config.NLP_CONNECTION_STRING)
 
 # Can accept multiple files currently
 uploaded_files = st.file_uploader(
-    label="Upload legal document here or simply enter the text to be processed below:",
+    label="Upload documents to process here or simply enter the text to process below.",
     # label_visibility="hidden",
     accept_multiple_files=True,
     type=[".docx", ".pdf", ".txt", ".rtf"],
 )
 show_processed_text = False
+if "tags" not in st.session_state:
+    st.session_state.tags = ['person', 'organization', 'location', 'date', 'law', 'technology', 'number']
+
 # This needs to be before where the text_area input box is defined
 if uploaded_files:
     st.session_state.ner_input = load_file_contents(uploaded_files)
 
 c_1, c_2 = st.columns((0.8, 0.2), gap="medium")
+
 with c_1.expander("🞂 Input Text And Labels", expanded=not show_processed_text):
-
-    col1, col2 = st.columns((0.7, 0.3), gap="medium")
-    with col1:
-        text_input = st.text_area(
-            "Enter text here:",
-            value=st.session_state["ner_input"],
-            height=250,
-        )
-        labels_input = st_tags(
-            label='Entity labels:',
-            text='Press enter to add more',
-            value=['person', 'organization', 'location', 'person', 'date', 'law', 'technology', 'number'],
-            suggestions=[],
-            maxtags = 16,
-            key='ner_labels')
-    with col2:
-        # Show table of entity labels
-        ner_labels = split_list_into_df(api_client.get_ner_labels(), 1)
-
-        ner_table_html = ner_labels.to_html(index=False, header=False)
-        ner_table_html = ner_table_html.replace(
-            "<table",
-            '<table style="font-size:.875rem; line-height:1.25rem; border-color:#e5e7eb; border-style:solid;"',
-        )
-        st.write('<h5 style="margin-top:1rem">Labels</h5>', unsafe_allow_html=True)
-        st.write(ner_table_html, unsafe_allow_html=True)
-
-# Process and send to scoti buttons
+    text_input = st.text_area(
+        "Enter text here:",
+        value=st.session_state["ner_input"],
+        height=250,
+    )
+    labels_input = st_tags(
+        label='Entity labels:',
+        text='Press enter to add more',
+        value=['person', 'organization', 'location', 'date', 'law', 'technology', 'number'],
+        suggestions=[],
+        maxtags = 16,
+        key='ner_labels')
 
 with c_2:
     if st.button("Process text",help="If you have upload all documents and/or entered all text, click here to process entity extraction."):

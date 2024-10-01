@@ -31,13 +31,13 @@ python start_both.py
 
 ### Docker usage
 
-docker build -t stevechapman/legal_nlp:1.12b .
+docker build -t stevechapman/legal_nlp:1.15 .
 
-docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=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" stevechapman/legal_nlp:1.12b
+docker run -p 8501:8501 -e "HUGGING_FACE_HUB_TOKEN=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" stevechapman/legal_nlp:1.15
 
 docker login
 
-docker push stevechapman/legal_nlp:1.12
+docker push stevechapman/legal_nlp:1.15
 
 The container registry is in hub.docker.com
 The docker image url is configured in the portal solution

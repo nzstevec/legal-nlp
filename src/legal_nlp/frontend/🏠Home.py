@@ -13,7 +13,7 @@ st.set_page_config(
 add_logo("frontend/static/images/smartR-AI-logo-RGB_250x90.png", height=65)
 
 st.write("# Welcome to SCOTi! 👋")
-st.switch_page("pages/1_📄Legal_Entity_Recognition.py")
+st.switch_page("pages/1_📄Entity_Recognition.py")
 # st.sidebar.success("Select a demo above.")
 
 # st.markdown(

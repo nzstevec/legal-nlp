@@ -41,8 +41,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copy the source code into the container.
 COPY . .
 
+RUN python -m pip install transformers==4.39.3 gliner==0.2.8 gliner-spacy==0.0.10 
+
 RUN python -m pip install -U transformers "huggingface_hub[cli]"
-# ENV HUGGING_FACE_HUB_TOKEN="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"
 
 WORKDIR /src/legal_nlp/frontend/components/streamlit-agraph
 RUN python -m pip install .

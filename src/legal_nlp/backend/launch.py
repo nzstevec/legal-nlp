@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from routes import router
 
-app = FastAPI()
+try:
+    app = FastAPI()
 
-app.include_router(router)
+    app.include_router(router)
+
+except Exception as e:
+    print(f"****>>>>> Error: {e}")
